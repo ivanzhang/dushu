@@ -1,0 +1,16 @@
+{
+  "title": "三国演义",
+  "author": "罗贯中",
+  "authorSlug": "luoguanzhong",
+  "dynasty": "元末明初",
+  "category": ["古典小说", "历史演义"],
+  "tags": ["三国", "历史", "战争", "权谋"],
+  "wordCount": 600000,
+  "chapterCount": 120,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者罗贯中（约1330—约1400）逝世已超过600年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E4%B8%89%E5%9C%8B%E6%BC%94%E7%BE%A9",
+  "summary": "《三国演义》全名《三国志通俗演义》，是中国古典四大名著之一。小说以东汉末年为历史背景，以刘关张三兄弟、诸葛亮、曹操等为主要人物，讲述了从黄巾起义到西晋统一的百年风云历史。全书描绘了魏、蜀、吴三个政治集团之间的政治斗争与军事冲突，堪称中国历史小说的巅峰之作。"
+}

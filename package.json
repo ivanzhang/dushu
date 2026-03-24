@@ -1,0 +1,19 @@
+{
+  "name": "mochao-novel",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && npx pagefind --site dist",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "build:verify": "node tests/build-verify.ts"
+  },
+  "dependencies": {
+    "astro": "^6.0.8"
+  },
+  "devDependencies": {
+    "pagefind": "^1.4.0",
+    "vitest": "^4.1.1"
+  }
+}

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>墨潮小说 - 首页</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body data-page="home">
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="./index.html">
+          <span class="brand-badge">墨</span>
+          <span>墨潮小说</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="打开菜单">☰</button>
+        <nav>
+          <ul class="nav-list">
+            <li><a class="nav-link" data-page="home" href="./index.html">首页</a></li>
+            <li><a class="nav-link" data-page="category" href="./category.html">分类</a></li>
+            <li><a class="nav-link" data-page="book" href="./book.html">书籍详情</a></li>
+            <li><a class="nav-link" data-page="reader" href="./reader.html">在线阅读</a></li>
+            <li><a class="nav-link" data-page="bookshelf" href="./bookshelf.html">我的书架</a></li>
+            <li><a class="nav-link" data-page="login" href="./login.html">登录</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero container">
+        <article class="hero-card reveal">
+          <div class="hero-copy">
+            <h1 class="hero-title">你的下一本沉浸式小说，<em>今晚就开读</em></h1>
+            <p class="hero-desc">
+              墨潮小说模板聚焦“找书快 + 阅读稳 + 运营清晰”，先交付核心阅读体验，后续可平滑接入后端和付费体系。
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="./reader.html">立即试读</a>
+              <a class="btn btn-secondary" href="./category.html">浏览分类</a>
+            </div>
+            <div class="hero-stats">
+              <div class="stat">
+                <strong>2,000+</strong>
+                <span>模板可扩展章节容量</span>
+              </div>
+              <div class="stat">
+                <strong>6</strong>
+                <span>已落地前台页面</span>
+              </div>
+              <div class="stat">
+                <strong>100%</strong>
+                <span>纯前端可离线预览</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-rank">
+              <h3>本周热读 Top 5</h3>
+              <ol id="hero-ranking"></ol>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section container">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">编辑精选</h2>
+            <p class="section-sub">高点击 + 高留存题材组合，适合首页首屏推荐位。</p>
+          </div>
+          <a href="./category.html" class="btn btn-secondary">查看更多</a>
+        </div>
+        <div id="featured-grid" class="grid"></div>
+      </section>
+
+      <section class="section container">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">新书速递</h2>
+            <p class="section-sub">近期更新快、讨论热度高的新书池。</p>
+          </div>
+        </div>
+        <div id="new-grid" class="grid"></div>
+      </section>
+
+      <section class="section container">
+        <div class="notice">
+          当前为模板预览版本：无后端依赖，所有数据为本地 mock；下一阶段可接入 API、登录态与搜索引擎。
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <strong>墨潮小说模板</strong> · 前端启动版 · 页面模块：首页 / 分类 / 详情 / 阅读 / 书架 / 登录
+      </div>
+    </footer>
+
+    <script src="./assets/mock-data.js"></script>
+    <script src="./assets/main.js"></script>
+  </body>
+</html>

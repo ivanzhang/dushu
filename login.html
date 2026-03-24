@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>墨潮小说 - 登录</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body data-page="login">
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="./index.html">
+          <span class="brand-badge">墨</span>
+          <span>墨潮小说</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="打开菜单">☰</button>
+        <nav>
+          <ul class="nav-list">
+            <li><a class="nav-link" data-page="home" href="./index.html">首页</a></li>
+            <li><a class="nav-link" data-page="category" href="./category.html">分类</a></li>
+            <li><a class="nav-link" data-page="book" href="./book.html">书籍详情</a></li>
+            <li><a class="nav-link" data-page="reader" href="./reader.html">在线阅读</a></li>
+            <li><a class="nav-link" data-page="bookshelf" href="./bookshelf.html">我的书架</a></li>
+            <li><a class="nav-link" data-page="login" href="./login.html">登录</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="auth-wrap">
+        <aside class="auth-banner reveal">
+          <h1 style="margin-top:0; font-size:38px; line-height:1.15;">读者与创作者的同一入口</h1>
+          <p>登录后可同步书架、保存阅读偏好、参与评论互动。模板阶段仅演示表单布局与交互切换，不发起真实请求。</p>
+          <ul style="line-height:1.9; padding-left:18px;">
+            <li>书架进度云同步（后续接入后端）</li>
+            <li>章节更新提醒</li>
+            <li>作者中心入口</li>
+          </ul>
+        </aside>
+
+        <section class="auth-panel reveal">
+          <div class="tab-row">
+            <button class="tab active" data-mode="login" type="button">登录</button>
+            <button class="tab" data-mode="register" type="button">注册</button>
+          </div>
+
+          <h2 id="auth-title" style="margin:0;">欢迎回来</h2>
+          <p id="auth-hint" class="section-sub">继续追更，系统会自动同步阅读进度。</p>
+
+          <form class="form-grid" action="javascript:void(0)">
+            <label>
+              手机号 / 邮箱
+              <input type="text" placeholder="请输入手机号或邮箱" />
+            </label>
+            <label>
+              密码
+              <input type="password" placeholder="请输入密码" />
+            </label>
+            <label id="register-only" style="display:none;">
+              确认密码
+              <input type="password" placeholder="请再次输入密码" />
+            </label>
+            <button id="auth-submit" class="btn btn-primary" type="submit">立即登录</button>
+            <button class="btn btn-secondary" type="button">验证码登录</button>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">登录页模板支持登录/注册切换，后续可接入真实鉴权接口。</div>
+    </footer>
+
+    <script src="./assets/mock-data.js"></script>
+    <script src="./assets/main.js"></script>
+  </body>
+</html>

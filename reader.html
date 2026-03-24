@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>墨潮小说 - 在线阅读</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body data-page="reader">
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="./index.html">
+          <span class="brand-badge">墨</span>
+          <span>墨潮小说</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="打开菜单">☰</button>
+        <nav>
+          <ul class="nav-list">
+            <li><a class="nav-link" data-page="home" href="./index.html">首页</a></li>
+            <li><a class="nav-link" data-page="category" href="./category.html">分类</a></li>
+            <li><a class="nav-link" data-page="book" href="./book.html">书籍详情</a></li>
+            <li><a class="nav-link" data-page="reader" href="./reader.html">在线阅读</a></li>
+            <li><a class="nav-link" data-page="bookshelf" href="./bookshelf.html">我的书架</a></li>
+            <li><a class="nav-link" data-page="login" href="./login.html">登录</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="section">
+        <div class="reader-wrap">
+          <aside class="reader-side panel reveal">
+            <div class="panel-head">
+              <strong>阅读设置</strong>
+            </div>
+            <div class="panel-body reader-controls">
+              <label>
+                字体大小
+                <input id="font-range" type="range" min="16" max="30" value="20" />
+              </label>
+              <label>
+                行间距
+                <input id="line-range" type="range" min="140" max="240" value="185" />
+              </label>
+              <label>
+                阅读进度
+                <input id="progress-range" type="range" min="0" max="100" value="22" />
+              </label>
+              <div>
+                <small style="color: var(--ink-500)">阅读主题</small>
+                <div class="theme-row" style="margin-top:8px;">
+                  <button class="theme-dot" data-theme="default" style="background:#f8f4eb" title="默认"></button>
+                  <button class="theme-dot" data-theme="sepia" style="background:#e4d6bf" title="护眼"></button>
+                  <button class="theme-dot" data-theme="dark" style="background:#1c1c1c" title="夜间"></button>
+                </div>
+              </div>
+              <a class="btn btn-secondary" href="./book.html">返回目录</a>
+            </div>
+          </aside>
+
+          <article class="reader-main reveal">
+            <div class="reader-head">
+              <strong>雾港夜航 · 第 1 章 夜雾里的人影</strong>
+              <small id="reader-access-status" style="color: var(--ink-500)">自动保存进度（本地）</small>
+            </div>
+            <div id="reader-content" class="reader-content">
+              <div id="chapter-content"></div>
+            </div>
+            <div class="reader-foot">
+              <button class="btn btn-secondary">上一章</button>
+              <div style="flex:1; margin:0 16px; align-self:center;">
+                <div class="progress"><span id="chapter-progress" style="width:22%"></span></div>
+              </div>
+              <button class="btn btn-primary">下一章</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">阅读页模板已支持字体、行距、主题、进度本地记忆。</div>
+    </footer>
+
+    <script src="./assets/mock-data.js"></script>
+    <script src="./assets/main.js"></script>
+  </body>
+</html>

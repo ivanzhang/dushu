@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>墨潮小说 - 结算</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body data-page="subscription">
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="./index.html">
+          <span class="brand-badge">墨</span>
+          <span>墨潮小说</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="打开菜单">☰</button>
+        <nav>
+          <ul class="nav-list">
+            <li><a class="nav-link" data-page="home" href="./index.html">首页</a></li>
+            <li><a class="nav-link" data-page="category" href="./category.html">分类</a></li>
+            <li><a class="nav-link" data-page="book" href="./book.html">书籍详情</a></li>
+            <li><a class="nav-link" data-page="reader" href="./reader.html">在线阅读</a></li>
+            <li><a class="nav-link" data-page="bookshelf" href="./bookshelf.html">我的书架</a></li>
+            <li><a class="nav-link" data-page="subscription" href="./subscription.html">订阅</a></li>
+            <li><a class="nav-link" data-page="orders" href="./orders.html">订单</a></li>
+            <li><a class="nav-link" data-page="login" href="./login.html">登录</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h1 class="section-title">支付结算</h1>
+            <p class="section-sub">演示模式：点击按钮模拟成功/失败，不发起真实扣款。</p>
+          </div>
+          <a class="btn btn-secondary" href="./subscription.html">返回订阅中心</a>
+        </div>
+      </section>
+
+      <section class="section" style="padding-top:0;">
+        <div id="checkout-wrap"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">结算页模板可扩展：优惠券、税费、自动续费协议、支付回调状态。</div>
+    </footer>
+
+    <script src="./assets/mock-data.js"></script>
+    <script src="./assets/main.js"></script>
+  </body>
+</html>
