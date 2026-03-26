@@ -1,0 +1,102 @@
+---
+/**
+ * SEOHead.astro — SEO 元数据组件
+ * 输出 <title>、<meta description>、<link canonical>、JSON-LD、Open Graph
+ */
+
+interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+interface BookData {
+  title: string;
+  author: string;
+  wordCount?: number;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  type?: 'website' | 'book';
+  bookData?: BookData;
+  breadcrumbs?: BreadcrumbItem[];
+}
+
+const {
+  title,
+  description,
+  canonical,
+  type = 'website',
+  bookData,
+  breadcrumbs,
+} = Astro.props;
+
+const siteTitle = '墨潮小说';
+const fullTitle = `${title} - ${siteTitle}`;
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const canonicalUrl = canonical ?? Astro.url.href;
+
+// Book JSON-LD
+const bookJsonLd = bookData
+  ? JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Book',
+      name: bookData.title,
+      author: {
+        '@type': 'Person',
+        name: bookData.author,
+      },
+      ...(bookData.wordCount
+        ? { numberOfPages: Math.ceil(bookData.wordCount / 500) }
+        : {}),
+      inLanguage: 'zh-CN',
+      url: canonicalUrl,
+    })
+  : null;
+
+// BreadcrumbList JSON-LD
+const breadcrumbJsonLd =
+  breadcrumbs && breadcrumbs.length > 0
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs.map((item, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: item.url.startsWith('http') ? item.url : `${siteUrl}${item.url}`,
+        })),
+      })
+    : null;
+---
+
+<!-- 基础 SEO -->
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+<meta name="robots" content="index, follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content={type === 'book' ? 'book' : 'website'} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:site_name" content={siteTitle} />
+<meta property="og:locale" content="zh_CN" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+
+<!-- Book JSON-LD -->
+{bookJsonLd && (
+  <script type="application/ld+json" set:html={bookJsonLd} />
+)}
+
+<!-- BreadcrumbList JSON-LD -->
+{breadcrumbJsonLd && (
+  <script type="application/ld+json" set:html={breadcrumbJsonLd} />
+)}

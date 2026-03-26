@@ -1,0 +1,34 @@
+---
+/**
+ * Breadcrumb.astro — 面包屑导航组件
+ * 最后一项为当前页，不带链接。
+ * 用 "›" 分隔各层级。
+ */
+
+interface BreadcrumbItem {
+  name: string;
+  url?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label="面包屑导航">
+  <ol class="breadcrumb">
+    {items.map((item, index) => {
+      const isLast = index === items.length - 1;
+      return (
+        <li>
+          {isLast || !item.url
+            ? <span>{item.name}</span>
+            : <a href={item.url}>{item.name}</a>
+          }
+        </li>
+      );
+    })}
+  </ol>
+</nav>

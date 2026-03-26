@@ -1,0 +1,197 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import ReaderControls from '../../../components/ReaderControls.astro';
+import ChapterNav from '../../../components/ChapterNav.astro';
+
+export async function getStaticPaths() {
+  const chapters = await getCollection('chapters');
+  const books = await getCollection('books');
+
+  const bookMap = new Map(books.map((b) => [b.id, b]));
+
+  return chapters.map((ch) => {
+    const bookSlug = ch.data.bookId;
+    // 章节文件 slug：去掉 "bookSlug/" 前缀
+    const chapterFileSlug = ch.id.replace(`${bookSlug}/`, '');
+    const book = bookMap.get(bookSlug);
+
+    return {
+      params: { slug: bookSlug, chapter: chapterFileSlug },
+      props: { chapter: ch, bookTitle: book?.data.title ?? bookSlug },
+    };
+  });
+}
+
+interface Props {
+  chapter: Awaited<ReturnType<typeof getCollection<'chapters'>>>[number];
+  bookTitle: string;
+}
+
+const { chapter, bookTitle } = Astro.props;
+const { slug: bookSlug, chapter: chapterFileSlug } = Astro.params;
+
+// 渲染 Markdown 正文
+const { Content } = await render(chapter);
+
+// 获取同书所有章节，用于计算上下章
+const allChapters = await getCollection('chapters');
+const bookChapters = allChapters
+  .filter((ch) => ch.data.bookId === bookSlug)
+  .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+
+const currentIndex = bookChapters.findIndex((ch) => {
+  const fileSlug = ch.id.replace(`${bookSlug}/`, '');
+  return fileSlug === chapterFileSlug;
+});
+
+const prevChapter = currentIndex > 0 ? bookChapters[currentIndex - 1] : null;
+const nextChapter =
+  currentIndex < bookChapters.length - 1
+    ? bookChapters[currentIndex + 1]
+    : null;
+
+const prevSlug = prevChapter
+  ? prevChapter.id.replace(`${bookSlug}/`, '')
+  : undefined;
+const nextSlug = nextChapter
+  ? nextChapter.id.replace(`${bookSlug}/`, '')
+  : undefined;
+
+const totalChapters = bookChapters.length;
+const currentChapterNumber = chapter.data.chapterNumber;
+---
+
+<Base
+  title={`${chapter.data.title} · ${bookTitle}`}
+  description={`${bookTitle}第${currentChapterNumber}章：${chapter.data.title}`}
+  pagefindIgnore={true}
+>
+  <div class="container" data-pagefind-ignore>
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href={`/book/${bookSlug}`}>{bookTitle}</a>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">{chapter.data.title}</span>
+    </nav>
+
+    <!-- 阅读控件 -->
+    <ReaderControls />
+
+    <!-- 章节上导航 -->
+    <ChapterNav
+      bookSlug={bookSlug!}
+      currentChapter={currentChapterNumber}
+      totalChapters={totalChapters}
+      prevSlug={prevSlug}
+      nextSlug={nextSlug}
+    />
+
+    <!-- 章节正文 -->
+    <article class="reader-article">
+      <header class="chapter-header">
+        <p class="chapter-book-title">
+          <a href={`/book/${bookSlug}`}>{bookTitle}</a>
+        </p>
+        <h1 class="chapter-title">{chapter.data.title}</h1>
+        <p class="chapter-info">{chapter.data.wordCount} 字</p>
+      </header>
+
+      <div class="chapter-content">
+        <Content />
+      </div>
+    </article>
+
+    <!-- 章节下导航 -->
+    <ChapterNav
+      bookSlug={bookSlug!}
+      currentChapter={currentChapterNumber}
+      totalChapters={totalChapters}
+      prevSlug={prevSlug}
+      nextSlug={nextSlug}
+    />
+  </div>
+</Base>
+
+<style>
+  .reader-article {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+  }
+
+  .chapter-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--paper-300, #e8dbc3);
+  }
+
+  .chapter-book-title {
+    font-size: 0.875rem;
+    color: var(--ink-500, #5f5044);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-book-title a {
+    color: inherit;
+  }
+
+  .chapter-book-title a:hover {
+    color: var(--accent-500, #cc5c2f);
+  }
+
+  .chapter-title {
+    font-family: var(--font-serif, 'Noto Serif SC', serif);
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 700;
+    color: var(--ink-900, #18130f);
+    line-height: 1.4;
+    margin-bottom: 0.6rem;
+  }
+
+  .chapter-info {
+    font-size: 0.8rem;
+    color: var(--ink-300, #9b8b7c);
+  }
+
+  /* 章节正文 */
+  .chapter-content {
+    font-size: 18px; /* 可被 ReaderControls 动态修改 */
+    line-height: 2;
+    color: var(--ink-700, #2a201a);
+    font-family: var(--font-serif, 'Noto Serif SC', serif);
+  }
+
+  .chapter-content p {
+    margin-bottom: 1.25em;
+    text-indent: 2em;
+  }
+
+  /* 护眼主题 */
+  :global(.reader-theme-sepia) .chapter-content {
+    color: #3b2f1e;
+  }
+
+  :global(.reader-theme-sepia) {
+    background: #f4ead5;
+  }
+
+  /* 夜间主题 */
+  :global(.reader-theme-dark) .chapter-content {
+    color: #ccc5b8;
+  }
+
+  :global(.reader-theme-dark) {
+    background: #1a1612;
+  }
+
+  :global(.reader-theme-dark) .chapter-header {
+    border-color: #333;
+  }
+
+  :global(.reader-theme-dark) .chapter-title {
+    color: #e8ddd0;
+  }
+</style>

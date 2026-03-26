@@ -1,0 +1,155 @@
+---
+/**
+ * Base.astro — 基础布局
+ * 包含公共 header/nav、<main><slot /></main>、footer、移动端汉堡菜单。
+ */
+
+import SEOHead from '../components/SEOHead.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  pageType?: string;
+  pagefindIgnore?: boolean;
+}
+
+const {
+  title,
+  description,
+  pageType,
+  pagefindIgnore = false,
+} = Astro.props;
+
+const currentPath = Astro.url.pathname;
+
+function isActive(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
+
+const navItems = [
+  { href: '/',          label: '首页' },
+  { href: '/category',  label: '分类' },
+  { href: '/search',    label: '搜索' },
+  { href: '/about',     label: '关于' },
+];
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Google Fonts: Noto Serif SC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <SEOHead title={title} description={description} />
+    <slot name="head" />
+  </head>
+
+  <body
+    {...pageType ? { 'data-page': pageType } : {}}
+    {...pagefindIgnore ? { 'data-pagefind-ignore': '' } : {}}
+  >
+    <!-- 顶部导航栏 -->
+    <header class="topbar" role="banner">
+      <div class="container">
+        <div class="topbar-inner">
+          <!-- 品牌 logo -->
+          <a href="/" class="brand" aria-label="墨潮小说首页">
+            <span class="brand-badge" aria-hidden="true">墨</span>
+            <span>墨潮小说</span>
+          </a>
+
+          <!-- 移动端汉堡按钮 -->
+          <button
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-label="展开/收起导航菜单"
+            aria-expanded="false"
+            aria-controls="nav-list"
+          >
+            ☰
+          </button>
+
+          <!-- 导航列表 -->
+          <nav aria-label="主导航">
+            <ul class="nav-list" id="nav-list" role="list">
+              {navItems.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class={`nav-link${isActive(item.href) ? ' active' : ''}`}
+                    {...(isActive(item.href) ? { 'aria-current': 'page' } : {})}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
+
+    <!-- 页脚 -->
+    <footer role="contentinfo">
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <p style="margin: 0;">
+            © {new Date().getFullYear()} 墨潮小说 · 收录公有领域经典作品，免费在线阅读
+          </p>
+          <nav aria-label="页脚导航" style="display: flex; gap: 14px;">
+            <a href="/about" style="color: var(--ink-500);">关于</a>
+            <a href="/about/copyright" style="color: var(--ink-500);">版权说明</a>
+            <a href="/sitemap-index.xml" style="color: var(--ink-500);">站点地图</a>
+          </nav>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 移动端汉堡菜单脚本 -->
+    <script>
+      const toggle = document.getElementById('nav-toggle');
+      const navList = document.getElementById('nav-list');
+
+      if (toggle && navList) {
+        toggle.addEventListener('click', () => {
+          const isOpen = navList.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', String(isOpen));
+          toggle.textContent = isOpen ? '✕' : '☰';
+        });
+
+        // 点击导航链接后关闭菜单
+        navList.querySelectorAll('a').forEach((link) => {
+          link.addEventListener('click', () => {
+            navList.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.textContent = '☰';
+          });
+        });
+
+        // 点击菜单外部关闭
+        document.addEventListener('click', (e) => {
+          const target = e.target as Node;
+          if (!toggle.contains(target) && !navList.contains(target)) {
+            navList.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.textContent = '☰';
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

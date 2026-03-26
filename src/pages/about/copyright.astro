@@ -1,0 +1,223 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const books = await getCollection('books');
+
+const copyrightLabels: Record<string, string> = {
+  'public-domain': '公有领域',
+  'cc-by-sa': 'Creative Commons BY-SA',
+  'cc-by': 'Creative Commons BY',
+  'author-authorized': '作者授权',
+};
+
+const copyrightDescriptions: Record<string, string> = {
+  'public-domain':
+    '作者逝世超过 50 年（中国大陆法律标准为作者死后 50 年），版权保护期届满，任何人均可自由使用、复制、传播。',
+  'cc-by-sa':
+    '采用知识共享 署名-相同方式共享 许可证，可自由使用但须署名，且衍生作品须采用相同许可证。',
+  'cc-by':
+    '采用知识共享 署名 许可证，可自由使用但须在合理位置注明原作者姓名。',
+  'author-authorized':
+    '原作者或版权持有人已明确授权本站展示，具体条款以授权协议为准。',
+};
+---
+
+<Base
+  title="版权说明"
+  description="墨潮读书版权政策说明——本站收录书籍均为公有领域或获得授权的作品。"
+>
+  <div class="container">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="/about">关于</a>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">版权说明</span>
+    </nav>
+
+    <header class="page-header">
+      <h1 class="page-title">版权说明</h1>
+    </header>
+
+    <!-- 版权政策说明 -->
+    <section class="policy-section">
+      <h2 class="section-title">我们的版权立场</h2>
+      <p>
+        墨潮读书只收录满足以下条件之一的作品：
+      </p>
+      <ul class="policy-list">
+        <li>作者已逝世超过 50 年，作品进入公有领域；</li>
+        <li>作品采用允许自由传播的开放版权许可证发布；</li>
+        <li>版权持有人已向本站授权展示。</li>
+      </ul>
+      <p>
+        我们尊重知识产权，如您认为本站收录的任何内容存在版权问题，请通过页脚联系方式告知，我们将在核实后及时处理。
+      </p>
+    </section>
+
+    <!-- 版权状态类型说明 -->
+    <section class="status-section">
+      <h2 class="section-title">版权状态类型</h2>
+      <div class="status-list">
+        {Object.entries(copyrightLabels).map(([key, label]) => (
+          <div class="status-item">
+            <div class="status-badge" data-type={key}>{label}</div>
+            <p class="status-desc">{copyrightDescriptions[key]}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 书目版权信息 -->
+    <section class="books-copyright-section">
+      <h2 class="section-title">各书来源与版权</h2>
+      <table class="copyright-table">
+        <thead>
+          <tr>
+            <th>书名</th>
+            <th>作者</th>
+            <th>版权状态</th>
+            <th>版权说明</th>
+            <th>来源</th>
+          </tr>
+        </thead>
+        <tbody>
+          {books.map((book) => (
+            <tr>
+              <td>
+                <a href={`/book/${book.id}`}>{book.data.title}</a>
+              </td>
+              <td>{book.data.author}</td>
+              <td>
+                <span class="tag" style="white-space: nowrap;">
+                  {copyrightLabels[book.data.copyrightStatus] ?? book.data.copyrightStatus}
+                </span>
+              </td>
+              <td class="copyright-note-cell">{book.data.copyrightNote}</td>
+              <td>
+                <a
+                  href={book.data.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="source-link"
+                >
+                  {book.data.source} ↗
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-title {
+    font-family: var(--font-serif, 'Noto Serif SC', serif);
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  /* 政策说明 */
+  .policy-section {
+    margin-bottom: 2.5rem;
+    line-height: 1.8;
+  }
+
+  .policy-section p {
+    margin-bottom: 0.75rem;
+    color: var(--ink-700, #2a201a);
+  }
+
+  .policy-list {
+    margin: 0.5rem 0 0.75rem 1.5rem;
+    color: var(--ink-700, #2a201a);
+  }
+
+  .policy-list li {
+    margin-bottom: 0.3rem;
+  }
+
+  /* 版权类型 */
+  .status-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--paper-100, #f8f4eb);
+    border: 1px solid var(--paper-300, #e8dbc3);
+    border-radius: 6px;
+  }
+
+  .status-badge {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25em 0.75em;
+    border-radius: 999px;
+    background: var(--accent-500, #cc5c2f);
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .status-desc {
+    font-size: 0.875rem;
+    color: var(--ink-700, #2a201a);
+    line-height: 1.65;
+  }
+
+  /* 书目表格 */
+  .books-copyright-section {
+    margin-bottom: 2rem;
+    overflow-x: auto;
+  }
+
+  .copyright-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .copyright-table th,
+  .copyright-table td {
+    padding: 0.65rem 0.875rem;
+    text-align: left;
+    border-bottom: 1px solid var(--paper-300, #e8dbc3);
+    vertical-align: top;
+  }
+
+  .copyright-table th {
+    background: var(--paper-200, #f1e8d8);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .copyright-note-cell {
+    font-size: 0.8rem;
+    color: var(--ink-500, #5f5044);
+    max-width: 300px;
+    line-height: 1.55;
+  }
+
+  .source-link {
+    color: var(--teal-500, #1f7f7b);
+    white-space: nowrap;
+  }
+</style>

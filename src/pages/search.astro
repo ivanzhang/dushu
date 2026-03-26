@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="搜索"
+  description="搜索墨潮读书收录的古典名著书籍与章节内容。"
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">搜索</h1>
+      <p class="page-desc">搜索书名、作者或正文内容</p>
+    </header>
+
+    <!-- Pagefind UI 挂载点 -->
+    <div id="search" class="search-wrap"></div>
+  </div>
+</Base>
+
+<!-- Pagefind UI 样式与脚本（构建后由 pagefind 生成） -->
+<link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', function() {
+    import('/pagefind/pagefind-ui.js').then(function(mod) {
+      new mod.PagefindUI({
+        element: '#search',
+        showImages: false,
+        excerptLength: 60,
+        translations: {
+          placeholder: '搜索书名、作者、内容…',
+          zero_results: '未找到相关结果，请尝试其他关键词',
+        },
+      });
+    }).catch(function() {
+      var el = document.getElementById('search');
+      if (el) {
+        el.innerHTML =
+          '<p style="color:#9b8b7c;font-size:0.9rem;">搜索功能需要先构建站点（<code>bun run build</code>）以生成索引。</p>';
+      }
+    });
+  });
+</script>
+
+<style>
+  .page-header {
+    margin-bottom: 1.75rem;
+  }
+
+  .page-title {
+    font-family: var(--font-serif, 'Noto Serif SC', serif);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--ink-500, #5f5044);
+  }
+
+  .search-wrap {
+    max-width: 780px;
+  }
+
+  /* 覆盖 Pagefind UI 部分样式以贴合站点风格 */
+  :global(.pagefind-ui__search-input) {
+    border-radius: 6px !important;
+    border-color: var(--paper-300, #e8dbc3) !important;
+    font-family: inherit !important;
+  }
+
+  :global(.pagefind-ui__search-input:focus) {
+    border-color: var(--accent-500, #cc5c2f) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(204, 92, 47, 0.15) !important;
+  }
+
+  :global(.pagefind-ui__result-title a) {
+    color: var(--accent-500, #cc5c2f) !important;
+  }
+</style>

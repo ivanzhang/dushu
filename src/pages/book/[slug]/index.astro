@@ -1,0 +1,368 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import BookCard from '../../../components/BookCard.astro';
+import { getRecommendations } from '../../../lib/recommend';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+  return books.map((book) => ({
+    params: { slug: book.id },
+    props: { book },
+  }));
+}
+
+const { book } = Astro.props;
+const { data } = book;
+
+// 章节列表
+const allChapters = await getCollection('chapters');
+const bookChapters = allChapters
+  .filter((ch) => ch.data.bookId === book.id)
+  .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+
+// 推荐书籍
+const allBooks = await getCollection('books');
+const recommendations = getRecommendations(book, allBooks, 6);
+
+// 版权状态标签
+const copyrightLabels: Record<string, string> = {
+  'public-domain': '公有领域',
+  'cc-by-sa': 'CC BY-SA',
+  'cc-by': 'CC BY',
+  'author-authorized': '作者授权',
+};
+
+const totalWordsWan =
+  data.wordCount >= 10000
+    ? `${(data.wordCount / 10000).toFixed(1)} 万字`
+    : `${data.wordCount} 字`;
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const canonicalUrl = `${siteUrl}/book/${book.id}`;
+
+const bookJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Book',
+  name: data.title,
+  author: { '@type': 'Person', name: data.author },
+  description: data.summary.slice(0, 120),
+  inLanguage: 'zh-CN',
+  url: canonicalUrl,
+});
+---
+
+<Base
+  title={`${data.title} · ${data.author}`}
+  description={data.summary.slice(0, 120)}
+>
+  <!-- Book JSON-LD -->
+  <script slot="head" type="application/ld+json" set:html={bookJsonLd} />
+
+  <div class="container" data-pagefind-body>
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+
+    <div class="book-detail-layout">
+      <!-- 左：书籍封面 + 信息 -->
+      <aside class="book-sidebar">
+        <div class="book-cover-large" aria-hidden="true">
+          <span>{data.title.slice(0, 2)}</span>
+        </div>
+        <div class="book-sidebar-meta">
+          <dl class="meta-list">
+            <dt>作者</dt>
+            <dd>
+              <a href={`/author/${data.authorSlug}`}>{data.author}</a>
+            </dd>
+            {data.dynasty && (
+              <>
+                <dt>朝代</dt>
+                <dd>{data.dynasty}</dd>
+              </>
+            )}
+            <dt>字数</dt>
+            <dd>{totalWordsWan}</dd>
+            <dt>章节</dt>
+            <dd>{data.chapterCount} 章</dd>
+            <dt>状态</dt>
+            <dd>{data.status}</dd>
+            <dt>版权</dt>
+            <dd>{copyrightLabels[data.copyrightStatus] ?? data.copyrightStatus}</dd>
+          </dl>
+          {bookChapters.length > 0 && (
+            <a
+              href={`/book/${book.id}/${bookChapters[0].id.split('/').pop()}`}
+              class="btn-start-reading"
+            >
+              开始阅读
+            </a>
+          )}
+        </div>
+      </aside>
+
+      <!-- 右：详情内容 -->
+      <main class="book-main">
+        <h1 class="book-detail-title">{data.title}</h1>
+
+        <!-- 分类标签 -->
+        <div class="book-tags-row">
+          {data.category.map((cat) => {
+            const catSlug = cat
+              .replace(/[\s　]/g, '-')
+              .replace(/[^\w\u4e00-\u9fff-]/g, '');
+            return (
+              <a href={`/category/${catSlug}`} class="tag">{cat}</a>
+            );
+          })}
+          {data.tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+
+        <!-- 简介 -->
+        <section class="book-summary-section">
+          <h2 class="section-title">内容简介</h2>
+          <p class="book-summary-text">{data.summary}</p>
+        </section>
+
+        <!-- 章节目录 -->
+        <section class="chapter-catalog-section">
+          <h2 class="section-title">章节目录</h2>
+          {bookChapters.length > 0 ? (
+            <ol class="chapter-list">
+              {bookChapters.map((ch) => {
+                const chapterFileSlug = ch.id.split('/').pop()!;
+                return (
+                  <li class="chapter-list-item">
+                    <a href={`/book/${book.id}/${chapterFileSlug}`} class="chapter-link">
+                      <span class="chapter-num">第 {ch.data.chapterNumber} 章</span>
+                      <span class="chapter-title-text">{ch.data.title}</span>
+                      <span class="chapter-words">{ch.data.wordCount} 字</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p class="empty-tip">章节内容整理中，敬请期待。</p>
+          )}
+        </section>
+
+        <!-- 版权信息 -->
+        <section class="copyright-section">
+          <h2 class="section-title">版权信息</h2>
+          <p class="copyright-note">{data.copyrightNote}</p>
+          <p class="copyright-source">
+            原始来源：
+            <a href={data.sourceUrl} target="_blank" rel="noopener noreferrer">
+              {data.source}
+            </a>
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <!-- 推荐书籍 -->
+    {recommendations.length > 0 && (
+      <section class="recommendations-section">
+        <h2 class="section-title">相关推荐</h2>
+        <div class="book-grid">
+          {recommendations.map((rec) => (
+            <BookCard
+              slug={rec.id}
+              title={rec.data.title}
+              author={rec.data.author}
+              category={rec.data.category}
+              tags={rec.data.tags}
+              status={rec.data.status}
+              wordCount={rec.data.wordCount}
+              summary={rec.data.summary}
+            />
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</Base>
+
+<style>
+  .book-detail-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    margin-bottom: 3rem;
+  }
+
+  @media (max-width: 720px) {
+    .book-detail-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 侧边栏 */
+  .book-sidebar {
+    position: sticky;
+    top: 5rem;
+  }
+
+  .book-cover-large {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(160deg, #5c2e0e 0%, #a0522d 100%);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .book-cover-large span {
+    font-family: var(--font-serif);
+    font-size: 3rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.88);
+    letter-spacing: 0.05em;
+  }
+
+  .meta-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.75rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .meta-list dt {
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .meta-list dd {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .btn-start-reading {
+    display: block;
+    text-align: center;
+    padding: 0.7em 1em;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .btn-start-reading:hover {
+    background: var(--color-primary-light);
+    text-decoration: none;
+  }
+
+  /* 主内容 */
+  .book-detail-title {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+  }
+
+  .book-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .book-summary-section,
+  .chapter-catalog-section,
+  .copyright-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .book-summary-text {
+    line-height: 1.85;
+    color: var(--color-text);
+    font-size: 0.95rem;
+  }
+
+  /* 章节列表 */
+  .chapter-list {
+    list-style: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .chapter-list-item:not(:last-child) {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .chapter-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background 0.15s;
+    font-size: 0.9rem;
+  }
+
+  .chapter-link:hover {
+    background: var(--color-tag-bg);
+    text-decoration: none;
+  }
+
+  .chapter-num {
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    min-width: 4.5em;
+  }
+
+  .chapter-title-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chapter-words {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  /* 版权 */
+  .copyright-note {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+  }
+
+  .copyright-source {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  /* 推荐 */
+  .recommendations-section {
+    margin-bottom: 2rem;
+  }
+
+  .empty-tip {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

@@ -1,0 +1,103 @@
+---
+/**
+ * ReaderControls：章节阅读器控件（字号、主题）。
+ * 纯客户端交互，无 props。
+ */
+---
+
+<div class="reader-controls" role="toolbar" aria-label="阅读设置">
+  <div class="rc-group">
+    <span class="rc-label">字号</span>
+    <button class="rc-btn" id="rc-font-dec" aria-label="减小字号" title="缩小">A-</button>
+    <button class="rc-btn" id="rc-font-inc" aria-label="增大字号" title="放大">A+</button>
+  </div>
+  <div class="rc-group">
+    <span class="rc-label">主题</span>
+    <button class="rc-btn rc-theme" data-theme="default" aria-label="默认主题">白</button>
+    <button class="rc-btn rc-theme" data-theme="sepia" aria-label="护眼主题">黄</button>
+    <button class="rc-btn rc-theme" data-theme="dark" aria-label="夜间主题">夜</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY_FONT = 'reader-font-size';
+  const STORAGE_KEY_THEME = 'reader-theme';
+  const CONTENT_SEL = '.chapter-content';
+
+  function getStoredFont(): number {
+    return parseInt(localStorage.getItem(STORAGE_KEY_FONT) ?? '18', 10);
+  }
+
+  function applyFont(size: number) {
+    const el = document.querySelector<HTMLElement>(CONTENT_SEL);
+    if (el) el.style.fontSize = `${size}px`;
+    localStorage.setItem(STORAGE_KEY_FONT, String(size));
+  }
+
+  function applyTheme(theme: string) {
+    document.body.classList.remove('reader-theme-sepia', 'reader-theme-dark');
+    if (theme === 'sepia') document.body.classList.add('reader-theme-sepia');
+    if (theme === 'dark') document.body.classList.add('reader-theme-dark');
+    localStorage.setItem(STORAGE_KEY_THEME, theme);
+  }
+
+  // 初始化
+  applyFont(getStoredFont());
+  applyTheme(localStorage.getItem(STORAGE_KEY_THEME) ?? 'default');
+
+  document.getElementById('rc-font-dec')?.addEventListener('click', () => {
+    applyFont(Math.max(14, getStoredFont() - 1));
+  });
+
+  document.getElementById('rc-font-inc')?.addEventListener('click', () => {
+    applyFont(Math.min(28, getStoredFont() + 1));
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.rc-theme').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      applyTheme(btn.dataset.theme ?? 'default');
+    });
+  });
+</script>
+
+<style>
+  .reader-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+  }
+
+  .rc-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .rc-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-right: 0.2rem;
+  }
+
+  .rc-btn {
+    padding: 0.25em 0.7em;
+    background: var(--color-tag-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: background 0.15s;
+  }
+
+  .rc-btn:hover {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+</style>

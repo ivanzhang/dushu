@@ -1,0 +1,102 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import BookCard from '../../components/BookCard.astro';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+
+  // 提取所有唯一分类，生成 slug -> 分类名 映射
+  const categoryMap = new Map<string, string>();
+  for (const book of books) {
+    for (const cat of book.data.category) {
+      const slug = cat
+        .replace(/[\s　]/g, '-')
+        .replace(/[^\w\u4e00-\u9fff-]/g, '');
+      categoryMap.set(slug, cat);
+    }
+  }
+
+  return Array.from(categoryMap.entries()).map(([slug, name]) => ({
+    params: { slug },
+    props: { categoryName: name },
+  }));
+}
+
+interface Props {
+  categoryName: string;
+}
+
+const { slug } = Astro.params;
+const { categoryName } = Astro.props;
+
+const allBooks = await getCollection('books');
+const filteredBooks = allBooks.filter((book) =>
+  book.data.category.includes(categoryName),
+);
+---
+
+<Base
+  title={`${categoryName} · 分类`}
+  description={`${categoryName}分类下的经典书籍，共 ${filteredBooks.length} 部作品，免费在线阅读。`}
+>
+  <div class="container">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>分类</span>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">{categoryName}</span>
+    </nav>
+
+    <header class="page-header">
+      <h1 class="page-title">{categoryName}</h1>
+      <p class="page-subtitle">共 {filteredBooks.length} 部作品</p>
+    </header>
+
+    {filteredBooks.length > 0 ? (
+      <div class="book-grid">
+        {filteredBooks.map((book) => (
+          <BookCard
+            slug={book.id}
+            title={book.data.title}
+            author={book.data.author}
+            category={book.data.category}
+            tags={book.data.tags}
+            status={book.data.status}
+            wordCount={book.data.wordCount}
+            summary={book.data.summary}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="empty-tip">该分类下暂无书籍。</p>
+    )}
+  </div>
+</Base>
+
+<style>
+  .page-header {
+    margin-bottom: 1.75rem;
+  }
+
+  .page-title {
+    font-family: var(--font-serif);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.35rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .empty-tip {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    padding: 2rem 0;
+  }
+</style>

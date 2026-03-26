@@ -1,0 +1,182 @@
+---
+/**
+ * Reader.astro — 阅读器控件组件
+ * 包含字体大小、行距调节和主题切换。
+ * 所有状态存储到 localStorage，使用内联 <script>，无需 client:load。
+ */
+---
+
+<div class="panel reader-side" id="reader-controls-panel">
+  <div class="panel-head">
+    <span style="font-size: 14px; font-weight: 600; color: var(--ink-700);">阅读设置</span>
+  </div>
+  <div class="panel-body">
+    <div class="reader-controls">
+      <!-- 字体大小 -->
+      <label>
+        字体大小
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input
+            type="range"
+            id="reader-font-size"
+            min="16"
+            max="28"
+            step="1"
+            value="20"
+            aria-label="字体大小"
+          />
+          <span id="reader-font-size-val" style="font-size: 13px; color: var(--ink-500); min-width: 28px; text-align: right;">20</span>
+        </div>
+      </label>
+
+      <!-- 行距 -->
+      <label>
+        行距
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input
+            type="range"
+            id="reader-line-height"
+            min="1.5"
+            max="2.5"
+            step="0.1"
+            value="1.85"
+            aria-label="行距"
+          />
+          <span id="reader-line-height-val" style="font-size: 13px; color: var(--ink-500); min-width: 28px; text-align: right;">1.9</span>
+        </div>
+      </label>
+
+      <!-- 主题 -->
+      <label>
+        阅读主题
+        <div class="theme-row">
+          <button
+            type="button"
+            class="theme-dot"
+            id="theme-default"
+            data-theme="default"
+            title="默认白纸"
+            style="background: #ffffff;"
+            aria-label="默认主题"
+          ></button>
+          <button
+            type="button"
+            class="theme-dot"
+            id="theme-sepia"
+            data-theme="sepia"
+            title="护眼米黄"
+            style="background: #f5ead8;"
+            aria-label="护眼主题"
+          ></button>
+          <button
+            type="button"
+            class="theme-dot"
+            id="theme-dark"
+            data-theme="dark"
+            title="夜间暗黑"
+            style="background: #1f1f1f;"
+            aria-label="夜间主题"
+          ></button>
+        </div>
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // 阅读器设置持久化（localStorage）
+  // ============================================================
+  const KEYS = {
+    fontSize:   'reader-font-size',
+    lineHeight: 'reader-line-height',
+    theme:      'reader-theme',
+  };
+
+  const CONTENT_SEL = '.reader-content';
+
+  // --- 工具函数 ---
+
+  function getContent(): HTMLElement | null {
+    return document.querySelector<HTMLElement>(CONTENT_SEL);
+  }
+
+  function clamp(val: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, val));
+  }
+
+  // --- 字体大小 ---
+
+  function applyFontSize(size: number) {
+    const el = getContent();
+    if (el) el.style.fontSize = `${size}px`;
+    const slider = document.getElementById('reader-font-size') as HTMLInputElement | null;
+    const label  = document.getElementById('reader-font-size-val');
+    if (slider) slider.value = String(size);
+    if (label)  label.textContent = String(size);
+    localStorage.setItem(KEYS.fontSize, String(size));
+  }
+
+  function loadFontSize(): number {
+    return clamp(parseInt(localStorage.getItem(KEYS.fontSize) ?? '20', 10), 16, 28);
+  }
+
+  // --- 行距 ---
+
+  function applyLineHeight(lh: number) {
+    const el = getContent();
+    if (el) el.style.lineHeight = String(lh);
+    const slider = document.getElementById('reader-line-height') as HTMLInputElement | null;
+    const label  = document.getElementById('reader-line-height-val');
+    if (slider) slider.value = String(lh);
+    if (label)  label.textContent = lh.toFixed(1);
+    localStorage.setItem(KEYS.lineHeight, String(lh));
+  }
+
+  function loadLineHeight(): number {
+    const stored = parseFloat(localStorage.getItem(KEYS.lineHeight) ?? '1.85');
+    return clamp(isNaN(stored) ? 1.85 : stored, 1.5, 2.5);
+  }
+
+  // --- 主题 ---
+
+  function applyTheme(theme: string) {
+    document.body.classList.remove('reader-theme-sepia', 'reader-theme-dark');
+    if (theme === 'sepia') document.body.classList.add('reader-theme-sepia');
+    if (theme === 'dark')  document.body.classList.add('reader-theme-dark');
+    localStorage.setItem(KEYS.theme, theme);
+
+    // 高亮当前主题圆点
+    document.querySelectorAll<HTMLButtonElement>('.theme-dot').forEach((dot) => {
+      dot.classList.toggle('active', dot.dataset.theme === theme);
+    });
+  }
+
+  function loadTheme(): string {
+    return localStorage.getItem(KEYS.theme) ?? 'default';
+  }
+
+  // --- 初始化 ---
+
+  applyFontSize(loadFontSize());
+  applyLineHeight(loadLineHeight());
+  applyTheme(loadTheme());
+
+  // --- 事件绑定 ---
+
+  const fontSlider = document.getElementById('reader-font-size') as HTMLInputElement | null;
+  fontSlider?.addEventListener('input', () => {
+    applyFontSize(parseInt(fontSlider.value, 10));
+  });
+
+  const lineSlider = document.getElementById('reader-line-height') as HTMLInputElement | null;
+  lineSlider?.addEventListener('input', () => {
+    applyLineHeight(parseFloat(lineSlider.value));
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.theme-dot').forEach((dot) => {
+    dot.addEventListener('click', () => {
+      applyTheme(dot.dataset.theme ?? 'default');
+    });
+  });
+</script>

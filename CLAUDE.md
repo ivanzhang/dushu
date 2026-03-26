@@ -4,60 +4,91 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**墨潮小说** (MoChao Novel) — a static front-end novel/fiction website template. Pure HTML/CSS/JS with no build tools, no framework, and no backend. All data is client-side mock data; state (subscriptions, orders, reader preferences) is persisted in `localStorage`.
+**墨潮小说** (MoChao Novel) — Astro 6 SSG 公版书聚合阅读站。纯静态生成，部署到 Cloudflare Workers Static Assets。收录公有领域古典文学作品，提供在线阅读体验。
 
 ## Development
 
-No build step. Open any `.html` file directly in a browser, or serve with any static server:
-
 ```bash
-python3 -m http.server 8000
-# then visit http://localhost:8000
+bun install          # 安装依赖
+bun run dev          # 本地开发服务器 (http://localhost:4321)
+bun run build        # SSG 构建 + Pagefind 索引
+bun run preview      # 预览构建产物
+bun run test         # Vitest 单元测试
+bun run build:verify # 构建后验证脚本
 ```
-
-There are no tests, linters, or package managers configured.
 
 ## Architecture
 
-### Pages (all top-level `.html` files)
+### Tech Stack
+- **Astro 6** — SSG 框架，`output: 'static'`
+- **Content Collections** — 书籍 (JSON) + 章节 (Markdown)，使用 `glob` loader
+- **Pagefind** — 客户端搜索，仅索引书籍详情页
+- **Vitest** — 单元测试
+- **Cloudflare Workers** — 部署（`wrangler.toml`）
 
-Each page sets `data-page="<name>"` on `<body>` for nav highlighting. Pages share a common header/nav/footer structure (duplicated, not templated).
+### Content Structure (`src/content/`)
 
-| Page | Purpose |
-|---|---|
-| `index.html` | Homepage — hero, featured books, new books |
-| `category.html` | Category browsing with filter chips |
-| `book.html` | Book detail + chapter catalog (paywall on ch7+) |
-| `reader.html` | Chapter reader with font/theme/progress controls |
-| `bookshelf.html` | User's reading list with progress bars |
-| `login.html` | Login/register tabs (UI only, no real auth) |
-| `subscription.html` | Membership tier selection (3 paid plans) |
-| `checkout.html` | Payment simulation (`?plan=starter|plus|pro`) |
-| `payment-success.html` / `payment-failed.html` | Post-payment result pages (`?order=<id>`) |
-| `orders.html` | Order history table from localStorage |
+```
+src/content/
+├── books/              # JSON 数据文件（每本书一个）
+│   ├── sanguoyanyi.json
+│   ├── hongloumeng.json
+│   └── xiyouji.json
+└── chapters/           # Markdown 章节内容
+    ├── sanguoyanyi/
+    │   ├── 001.md, 002.md, 003.md
+    ├── hongloumeng/
+    │   ├── 001.md, 002.md, 003.md
+    └── xiyouji/
+        ├── 001.md, 002.md, 003.md
+```
 
-### Assets (`assets/`)
+Content Collections 配置在 `src/content.config.ts`（Astro 6 要求此路径，非 `src/content/config.ts`）。
 
-- **`mock-data.js`** — `window.NovelSiteData` global: 6 sample books, chapter titles, chapter content, ranking list. Loaded first on every page.
-- **`main.js`** — Single IIFE containing all page logic. Detects current page via `document.body.dataset.page` and runs relevant render functions. Key systems:
-  - **Subscription/commerce**: `SUBSCRIPTION_PLANS` array, `getCurrentPlan()`/`setCurrentPlan()` backed by localStorage, `canAccess(level)` for paywall gating.
-  - **Order management**: `createOrder()`/`addOrder()`/`readOrders()` — localStorage-based order CRUD.
-  - **Reader controls**: font size, line height, progress, theme (default/sepia/dark) — all persisted to localStorage.
-  - **Nav injection**: `injectCommerceNav()` dynamically adds subscription/orders links to nav on every page.
-- **`styles.css`** — All styling. CSS custom properties for theming. Reader themes via `reader-theme-sepia`/`reader-theme-dark` body classes. Mobile responsive with `.nav-toggle`.
+### Pages (`src/pages/`)
 
-### Key Patterns
+| 路由 | 文件 | 说明 |
+|------|------|------|
+| `/` | `index.astro` | 首页：推荐、统计、分类入口 |
+| `/category/{slug}` | `category/[slug].astro` | 分类页 |
+| `/author/{slug}` | `author/[slug].astro` | 作者页 |
+| `/book/{slug}` | `book/[slug]/index.astro` | 书籍详情 + 目录（`data-pagefind-body`） |
+| `/book/{slug}/{chapter}` | `book/[slug]/[chapter].astro` | 章节阅读页（`data-pagefind-ignore`） |
+| `/search` | `search.astro` | Pagefind 搜索 |
+| `/about/copyright` | `about/copyright.astro` | 版权说明 |
+| `/404` | `404.astro` | 404 页 |
 
-- No routing — direct `.html` file navigation with query params (`?plan=`, `?order=`).
-- All render functions are safe to call on any page — they silently no-op if their target DOM elements don't exist.
-- Commerce flow: `subscription.html` → `checkout.html?plan=X` → simulate pay → `payment-success.html?order=Y` or `payment-failed.html?order=Y`.
-- The `plan.md` file is a product roadmap document (V1/V1.5/V2 phases), not code.
+### Components (`src/components/`)
+
+| 组件 | 说明 |
+|------|------|
+| `SEOHead.astro` | JSON-LD (Book/BreadcrumbList)、meta、canonical |
+| `BookCard.astro` | 书籍卡片 |
+| `Reader.astro` | 阅读器控件（字体/行距/主题，localStorage 持久化） |
+| `Breadcrumb.astro` | 面包屑导航 |
+| `ChapterNav.astro` | 上一章/下一章导航 |
+
+### Key Files
+
+- `src/lib/recommend.ts` — 相关推荐算法（同分类+3, 同标签+1, 同作者+2）
+- `src/styles/global.css` — 全局样式，CSS 变量驱动主题系统
+- `src/layouts/Base.astro` — 公共布局（header/nav/footer）
 
 ### localStorage Keys
 
 | Key | Usage |
 |---|---|
-| `novel-subscription-tier` | Current plan ID (`free`/`starter`/`plus`/`pro`) |
-| `novel-subscription-updated-at` | ISO timestamp of last plan change |
-| `novel-orders` | JSON array of order objects |
-| `reader-font-size` / `reader-line-height` / `reader-progress` / `reader-theme` | Reader preferences |
+| `reader-font-size` | 阅读器字体大小 |
+| `reader-line-height` | 阅读器行高 |
+| `reader-theme` | 阅读器主题 (default/sepia/dark) |
+
+## Testing
+
+```bash
+bun run test         # Vitest 单元测试
+bun run build:verify # 构建后验证（HTML 完整性、JSON-LD、Pagefind 索引）
+```
+
+## Deployment
+
+Cloudflare Workers Static Assets，配置在 `wrangler.toml`。CI/CD 在 `.github/workflows/deploy.yml`。

@@ -1,0 +1,184 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import BookCard from '../components/BookCard.astro';
+
+const books = await getCollection('books');
+
+// 统计数据
+const totalBooks = books.length;
+const totalChapters = books.reduce((sum, b) => sum + b.data.chapterCount, 0);
+const totalWords = books.reduce((sum, b) => sum + b.data.wordCount, 0);
+const totalWordsWan = Math.round(totalWords / 10000);
+
+// 提取所有唯一分类
+const allCategories = [...new Set(books.flatMap((b) => b.data.category))];
+---
+
+<Base
+  title="墨潮读书"
+  description="墨潮读书——阅读经典，品味千年文脉。收录中国古典文学公版书籍，免费在线阅读。"
+>
+  <!-- 英雄区域 -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-inner">
+        <h1 class="hero-title">阅读经典，品味千年文脉</h1>
+        <p class="hero-desc">
+          墨潮读书收录中国古典文学公版名著，免费在线阅读。
+          无广告、无付费墙，让每一位读者都能畅游文学瑰宝。
+        </p>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="hero-stat-num">{totalBooks}</span>
+            <span class="hero-stat-label">部经典著作</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num">{totalChapters}</span>
+            <span class="hero-stat-label">章节</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num">{totalWordsWan}万</span>
+            <span class="hero-stat-label">总字数</span>
+          </div>
+        </div>
+        <a href="#books" class="btn-hero">立即阅读</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 分类入口 -->
+  <section class="categories-section">
+    <div class="container">
+      <h2 class="section-title">浏览分类</h2>
+      <div class="category-chips">
+        {allCategories.map((cat) => {
+          const slug = cat
+            .replace(/[\s　]/g, '-')
+            .replace(/[^\w\u4e00-\u9fff-]/g, '');
+          return (
+            <a href={`/category/${slug}`} class="tag category-chip">
+              {cat}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- 推荐书籍 -->
+  <section class="books-section" id="books">
+    <div class="container">
+      <h2 class="section-title">全部书籍</h2>
+      <div class="book-grid">
+        {books.map((book) => (
+          <BookCard
+            slug={book.id}
+            title={book.data.title}
+            author={book.data.author}
+            category={book.data.category}
+            tags={book.data.tags}
+            status={book.data.status}
+            wordCount={book.data.wordCount}
+            summary={book.data.summary}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* 英雄区 */
+  .hero {
+    background: linear-gradient(135deg, #5c2e0e 0%, #8b4513 60%, #a0522d 100%);
+    color: #fff;
+    padding: 4rem 0 3.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-inner {
+    max-width: 640px;
+  }
+
+  .hero-title {
+    font-family: var(--font-serif);
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-desc {
+    font-size: 1.05rem;
+    opacity: 0.9;
+    line-height: 1.7;
+    margin-bottom: 1.75rem;
+    max-width: 520px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-stat-num {
+    font-size: 1.9rem;
+    font-weight: 700;
+    font-family: var(--font-serif);
+    line-height: 1;
+  }
+
+  .hero-stat-label {
+    font-size: 0.82rem;
+    opacity: 0.8;
+    margin-top: 0.2rem;
+  }
+
+  .btn-hero {
+    display: inline-block;
+    padding: 0.7em 2em;
+    background: #fff;
+    color: var(--color-primary);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .btn-hero:hover {
+    opacity: 0.9;
+    text-decoration: none;
+  }
+
+  /* 分类入口 */
+  .categories-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .category-chip {
+    font-size: 0.9rem;
+    padding: 0.3em 1em;
+  }
+
+  /* 书籍区 */
+  .books-section {
+    margin-bottom: 2rem;
+  }
+</style>

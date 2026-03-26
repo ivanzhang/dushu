@@ -1,0 +1,74 @@
+---
+/**
+ * BookCard.astro — 书籍卡片组件
+ * 展示书名、作者、分类标签、字数、状态、简介摘要，链接到 /book/{slug}
+ */
+
+interface Props {
+  slug: string;
+  title: string;
+  author: string;
+  category: string[];
+  tags: string[];
+  status: string;
+  wordCount: number;
+  summary: string;
+}
+
+const {
+  slug,
+  title,
+  author,
+  category,
+  tags,
+  status,
+  wordCount,
+  summary,
+} = Astro.props;
+
+/** 将字数格式化为"X 万字" */
+function formatWordCount(n: number): string {
+  if (n >= 10000) {
+    return `${(n / 10000).toFixed(1)} 万字`;
+  }
+  return `${n} 字`;
+}
+
+const href = `/book/${slug}`;
+// 合并分类和标签，最多显示 4 个
+const allTags = [...category, ...tags].slice(0, 4);
+---
+
+<article class="book-card">
+  <a href={href} class="book-cover-placeholder" aria-label={`《${title}》封面`}>
+    <span>{title.slice(0, 1)}</span>
+  </a>
+
+  <div class="book-body">
+    <h3 class="book-title">
+      <a href={href}>{title}</a>
+    </h3>
+
+    <p class="book-meta">
+      <span>{author}</span>
+      &nbsp;·&nbsp;
+      <span>{formatWordCount(wordCount)}</span>
+      &nbsp;·&nbsp;
+      <span>{status}</span>
+    </p>
+
+    {allTags.length > 0 && (
+      <div class="book-tags">
+        {allTags.map((t) => (
+          <span class="tag">{t}</span>
+        ))}
+      </div>
+    )}
+
+    <p class="book-summary-short">{summary}</p>
+
+    <div class="card-foot">
+      <a href={href} class="btn btn-primary btn-sm">开始阅读</a>
+    </div>
+  </div>
+</article>

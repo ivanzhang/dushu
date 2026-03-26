@@ -1,0 +1,145 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import BookCard from '../../components/BookCard.astro';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+
+  // 按 authorSlug 分组
+  const authorMap = new Map<string, { name: string; dynasty?: string }>();
+  for (const book of books) {
+    if (!authorMap.has(book.data.authorSlug)) {
+      authorMap.set(book.data.authorSlug, {
+        name: book.data.author,
+        dynasty: book.data.dynasty,
+      });
+    }
+  }
+
+  return Array.from(authorMap.entries()).map(([slug, info]) => ({
+    params: { slug },
+    props: { authorName: info.name, dynasty: info.dynasty },
+  }));
+}
+
+interface Props {
+  authorName: string;
+  dynasty?: string;
+}
+
+const { slug } = Astro.params;
+const { authorName, dynasty } = Astro.props;
+
+const allBooks = await getCollection('books');
+const authorBooks = allBooks.filter((book) => book.data.authorSlug === slug);
+---
+
+<Base
+  title={`${authorName} · 作者`}
+  description={`${authorName}${dynasty ? `（${dynasty}）` : ''}的作品列表，共 ${authorBooks.length} 部，免费在线阅读。`}
+>
+  <div class="container">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>作者</span>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">{authorName}</span>
+    </nav>
+
+    <!-- 作者简介 -->
+    <header class="author-header">
+      <div class="author-avatar" aria-hidden="true">
+        {authorName.slice(0, 1)}
+      </div>
+      <div class="author-info">
+        <h1 class="author-name">{authorName}</h1>
+        <div class="author-meta">
+          {dynasty && (
+            <span class="tag">{dynasty}</span>
+          )}
+          <span class="author-works-count">{authorBooks.length} 部作品</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 作品列表 -->
+    <section>
+      <h2 class="section-title">全部作品</h2>
+      {authorBooks.length > 0 ? (
+        <div class="book-grid">
+          {authorBooks.map((book) => (
+            <BookCard
+              slug={book.id}
+              title={book.data.title}
+              author={book.data.author}
+              category={book.data.category}
+              tags={book.data.tags}
+              status={book.data.status}
+              wordCount={book.data.wordCount}
+              summary={book.data.summary}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty-tip">该作者暂无收录作品。</p>
+      )}
+    </section>
+  </div>
+</Base>
+
+<style>
+  .author-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding: 1.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .author-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), #c8792a);
+    color: #fff;
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .author-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .author-works-count {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .empty-tip {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    padding: 2rem 0;
+  }
+</style>
