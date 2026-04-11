@@ -6,11 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  deployments: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Astro 6 要求 Node.js >= 22.12，这里固定到 24 避免 runner 默认版本过低。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -28,9 +37,12 @@ jobs:
       - name: Build verification
         run: bun run build:verify
 
-      - name: Deploy to Cloudflare
+      # 站点当前托管在 Cloudflare Pages，而不是 Workers Static Assets。
+      - name: Deploy to Cloudflare Pages
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy dist --project-name=dushumy
