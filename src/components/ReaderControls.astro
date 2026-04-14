@@ -311,6 +311,7 @@ const {
         currentProgress,
         measuredProgress: calculateProgress(),
         force,
+        pageHidden: document.hidden,
       });
 
       if (!force && Math.abs(nextProgress - currentProgress) < 0.02) {
@@ -345,6 +346,10 @@ const {
     function schedulePersist() {
       window.clearTimeout(persistTimer);
       persistTimer = window.setTimeout(() => {
+        if (document.hidden) {
+          return;
+        }
+
         persistCurrentProgress();
       }, 180);
     }
@@ -415,9 +420,13 @@ const {
     renderPanels();
 
     window.addEventListener('scroll', schedulePersist, { passive: true });
-    window.addEventListener('beforeunload', () => persistCurrentProgress(true));
+    window.addEventListener('beforeunload', () => {
+      window.clearTimeout(persistTimer);
+      persistCurrentProgress(true);
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
+        window.clearTimeout(persistTimer);
         persistCurrentProgress(true);
       }
     });

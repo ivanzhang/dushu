@@ -209,4 +209,15 @@ describe('reader state helpers', () => {
 
     expect(persisted).toBe(0.62);
   });
+
+  it('页面进入隐藏态后，延迟落盘不应把已保存进度冲回 0', () => {
+    const persisted = resolvePersistedReadingProgress({
+      currentProgress: 1,
+      measuredProgress: 0,
+      force: false,
+      pageHidden: true,
+    });
+
+    expect(persisted).toBe(1);
+  });
 });

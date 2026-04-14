@@ -224,17 +224,15 @@ export function resolvePersistedReadingProgress(input: {
   currentProgress: number;
   measuredProgress: number;
   force: boolean;
+  pageHidden?: boolean;
 }): number {
   const currentProgress = normalizeProgress(input.currentProgress);
   const measuredProgress = normalizeProgress(input.measuredProgress);
 
-  if (!input.force) {
-    return measuredProgress;
-  }
-
   // 页面切换时浏览器可能先把滚动位置重置，再触发强制落盘。
-  // 这种情况下测量值会瞬间掉成 0，此时保留上一份有效进度更安全。
-  if (currentProgress >= 0.03 && measuredProgress === 0) {
+  // 同样地，隐藏页签后的延迟定时器也可能读到瞬时 0 值。
+  // 这种情况下保留上一份有效进度更安全，避免书页回显被错误打回起点。
+  if ((input.force || input.pageHidden) && currentProgress >= 0.03 && measuredProgress === 0) {
     return currentProgress;
   }
 

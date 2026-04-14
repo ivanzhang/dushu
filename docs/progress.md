@@ -1528,3 +1528,28 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
 - `bun run test`：`75` 个测试全部通过
 - `bun run build`：成功，`502` pages
 - `bun run build:verify`：`1101` 项检查全部通过
+
+### 六、同日补充：书页进度回显再次收口
+
+继续做线上真实阅读链路复测时，发现还有一处“章节页看起来是 100%，回到书页却显示 0%”的残留问题，本轮已继续收口：
+
+- 根因补充确认
+  - 章节页滚动保存用了 `180ms` 延迟定时器
+  - 在点击“返回目录”或切到后台时，强制落盘虽然已经保住正确进度，但先前挂起的延迟定时器仍可能随后执行
+  - 该定时器会在页面隐藏态重新测到 `0`，再把 `localStorage` 里的正确进度覆盖掉，最终导致书页“上次进度 / 最近阅读”回显成 `0%`
+- 本轮修复
+  - `src/lib/reader-state.ts`
+    - `resolvePersistedReadingProgress(...)` 新增隐藏态保护
+    - 页面隐藏后若延迟落盘测到 `0`，会保留已有有效进度
+  - `src/components/ReaderControls.astro`
+    - 延迟落盘执行前先判断 `document.hidden`
+    - 在 `beforeunload` 与 `visibilitychange` 里清掉挂起定时器，再做强制落盘
+- 新增测试
+  - `tests/reader-state.test.ts`
+    - 新增“页面进入隐藏态后，延迟落盘不应把已保存进度冲回 0”断言
+
+这轮本地验证结果：
+
+- `bun run test`：`76` 个测试全部通过
+- `bun run build`：成功，`502` pages
+- `bun run build:verify`：`1101` 项检查全部通过
