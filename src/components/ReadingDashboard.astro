@@ -1,0 +1,559 @@
+---
+/**
+ * ReadingDashboard.astro
+ * 聚合当前浏览器里的继续阅读、书签、历史与阅读设置。
+ *
+ * 使用示例：
+ * <ReadingDashboard bookMetaList={bookMetaList} />
+ */
+
+interface ReadingBookMeta {
+  slug: string;
+  title: string;
+  author: string;
+  summary: string;
+  wordCount: number;
+  completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
+  tierLabel?: string;
+}
+
+interface Props {
+  bookMetaList: ReadingBookMeta[];
+}
+
+const { bookMetaList } = Astro.props;
+---
+
+<section class="reading-guide-card reading-dashboard" data-reading-dashboard>
+  <script
+    type="application/json"
+    data-reading-book-meta
+    set:html={JSON.stringify(bookMetaList)}
+  ></script>
+
+  <div class="reading-dashboard-head">
+    <div>
+      <h2 class="section-title">我的阅读</h2>
+      <p class="section-sub">
+        把当前浏览器里的继续阅读、书签和最近足迹集中在一起，方便回来时直接接着读。
+      </p>
+    </div>
+
+    <div class="reading-dashboard-actions">
+      <a href="/search" class="btn btn-secondary">继续找书</a>
+      <a href="/category" class="btn btn-secondary">去逛分馆</a>
+    </div>
+  </div>
+
+  <p class="notice reading-dashboard-notice">
+    阅读记录保存在当前浏览器，本机可持续回看；如果换设备或清空浏览器数据，需要重新积累。
+  </p>
+
+  <div class="reading-dashboard-grid">
+    <section class="panel reading-panel">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">继续阅读中的书</strong>
+          <p class="reading-panel-sub">按最近保存进度排序，可直接回到章节继续阅读。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="reading-active-grid" data-active-books>
+          <article class="reading-empty-card">
+            <h3>还没有开始读书</h3>
+            <p>先从镇馆书或分馆入口挑一本到第一章，之后这里就会自动出现继续阅读入口。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel reading-panel">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">最近书签</strong>
+          <p class="reading-panel-sub">看到想回来的位置时保存书签，这里会自动汇总。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <ul class="reading-log-list" data-bookmark-list>
+          <li class="reader-empty">还没有书签，读到喜欢的位置时再记一下。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel reading-panel">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">最近足迹</strong>
+          <p class="reading-panel-sub">最近打开过的章节会记录在这里，方便回看刚读过什么。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <ul class="reading-log-list" data-history-list>
+          <li class="reader-empty">还没有最近阅读记录。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel reading-panel">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">当前阅读设置</strong>
+          <p class="reading-panel-sub">会同步显示你最近一次阅读时用的字号、行距、版心和主题。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <dl class="reading-settings-grid" data-settings-list>
+          <div class="reading-setting-item">
+            <dt>字体大小</dt>
+            <dd>20 px</dd>
+          </div>
+          <div class="reading-setting-item">
+            <dt>行距</dt>
+            <dd>1.9</dd>
+          </div>
+          <div class="reading-setting-item">
+            <dt>版心宽度</dt>
+            <dd>760 px</dd>
+          </div>
+          <div class="reading-setting-item">
+            <dt>阅读主题</dt>
+            <dd>默认主题</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </div>
+</section>
+
+<script>
+  import { buildEpubDownloadPath } from '../lib/epub';
+  import {
+    READER_STORAGE_KEY,
+    buildChapterHref,
+    formatProgressLabel,
+    getReadingDashboardSnapshot,
+    parseReaderState,
+  } from '../lib/reader-state';
+
+  interface ReadingBookMeta {
+    slug: string;
+    title: string;
+    author: string;
+    summary: string;
+    wordCount: number;
+    completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
+    tierLabel?: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-reading-dashboard]');
+
+  if (root) {
+    const bookMetaNode = root.querySelector<HTMLScriptElement>('[data-reading-book-meta]');
+    const activeBooksRoot = root.querySelector<HTMLElement>('[data-active-books]');
+    const bookmarkList = root.querySelector<HTMLElement>('[data-bookmark-list]');
+    const historyList = root.querySelector<HTMLElement>('[data-history-list]');
+    const settingsList = root.querySelector<HTMLElement>('[data-settings-list]');
+
+    const bookMetaList = JSON.parse(bookMetaNode?.textContent ?? '[]') as ReadingBookMeta[];
+    const bookMetaMap = new Map(bookMetaList.map((item) => [item.slug, item]));
+
+    function formatWordCount(wordCount: number) {
+      if (wordCount >= 10000) {
+        return `${(wordCount / 10000).toFixed(1)} 万字`;
+      }
+
+      return `${wordCount} 字`;
+    }
+
+    function formatThemeLabel(theme: string) {
+      if (theme === 'sepia') {
+        return '护眼主题';
+      }
+
+      if (theme === 'dark') {
+        return '夜间主题';
+      }
+
+      return '默认主题';
+    }
+
+    function getBookMeta(bookSlug: string, fallbackTitle: string) {
+      return bookMetaMap.get(bookSlug) ?? {
+        slug: bookSlug,
+        title: fallbackTitle,
+        author: '馆内作品',
+        summary: '该书的书目数据正在整理中，可以先从阅读记录直接继续阅读。',
+        wordCount: 0,
+      };
+    }
+
+    function createActionLink(href: string, text: string, secondary = false) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.className = secondary ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm';
+      link.textContent = text;
+      return link;
+    }
+
+    function renderActiveBooks(items: ReturnType<typeof getReadingDashboardSnapshot>['activeBooks']) {
+      if (!activeBooksRoot) {
+        return;
+      }
+
+      activeBooksRoot.replaceChildren();
+
+      if (items.length === 0) {
+        const emptyCard = document.createElement('article');
+        const title = document.createElement('h3');
+        const desc = document.createElement('p');
+
+        emptyCard.className = 'reading-empty-card';
+        title.textContent = '还没有开始读书';
+        desc.textContent = '先从四大名著、分馆书架或搜索页挑一本到第一章，之后这里就会自动出现继续阅读入口。';
+
+        emptyCard.append(title, desc);
+        activeBooksRoot.append(emptyCard);
+        return;
+      }
+
+      items.slice(0, 6).forEach((item) => {
+        const meta = getBookMeta(item.bookSlug, item.bookTitle);
+        const card = document.createElement('article');
+        const badgeRow = document.createElement('div');
+        const title = document.createElement('h3');
+        const metaText = document.createElement('p');
+        const desc = document.createElement('p');
+        const progress = document.createElement('p');
+        const detail = document.createElement('p');
+        const actions = document.createElement('div');
+
+        card.className = 'reading-book-card';
+        badgeRow.className = 'reading-book-badges';
+        title.className = 'reading-book-title';
+        metaText.className = 'reading-book-meta';
+        desc.className = 'reading-book-desc';
+        progress.className = 'reading-book-progress';
+        detail.className = 'reading-book-detail';
+        actions.className = 'reading-book-actions';
+
+        if (meta.tierLabel) {
+          const tier = document.createElement('span');
+          tier.className = 'tag tag-tier';
+          tier.textContent = meta.tierLabel;
+          badgeRow.append(tier);
+        }
+
+        if (meta.completionLevel) {
+          const completion = document.createElement('span');
+          completion.className = 'tag';
+          completion.textContent = `${meta.completionLevel} 阅读深度`;
+          badgeRow.append(completion);
+        }
+
+        title.textContent = meta.title;
+        metaText.textContent = `${meta.author} · ${formatWordCount(meta.wordCount)}`;
+        desc.textContent = meta.summary;
+        progress.textContent = `读到第 ${item.chapterNumber} 章 · ${formatProgressLabel(item.progress)}`;
+        detail.textContent = `最近足迹 ${item.historyCount} 条 · 书签 ${item.bookmarkCount} 条`;
+
+        actions.append(
+          createActionLink(buildChapterHref(item.bookSlug, item.chapterSlug), '继续阅读'),
+          createActionLink(`/book/${item.bookSlug}`, '回到书页', true),
+          createActionLink(buildEpubDownloadPath(item.bookSlug), '下载 EPUB', true),
+        );
+
+        card.append(badgeRow, title, metaText, desc, progress, detail, actions);
+        activeBooksRoot.append(card);
+      });
+    }
+
+    // 历史与书签共用一套渲染器，统一保持章节入口和百分比信息。
+    function renderLogList(
+      target: HTMLElement | null,
+      items: Array<{
+        bookSlug: string;
+        bookTitle: string;
+        chapterSlug: string;
+        chapterTitle: string;
+        chapterNumber: number;
+        progress: number;
+      }>,
+      emptyText: string,
+    ) {
+      if (!target) {
+        return;
+      }
+
+      target.replaceChildren();
+
+      if (items.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'reader-empty';
+        empty.textContent = emptyText;
+        target.append(empty);
+        return;
+      }
+
+      items.slice(0, 8).forEach((item) => {
+        const listItem = document.createElement('li');
+        const content = document.createElement('div');
+        const link = document.createElement('a');
+        const sub = document.createElement('p');
+        const meta = document.createElement('span');
+
+        listItem.className = 'reading-log-item';
+        content.className = 'reading-log-content';
+        link.className = 'reader-link-item';
+        sub.className = 'reading-log-sub';
+        meta.className = 'reader-link-meta';
+
+        link.href = buildChapterHref(item.bookSlug, item.chapterSlug);
+        link.textContent = `${item.bookTitle} · 第 ${item.chapterNumber} 章`;
+        sub.textContent = item.chapterTitle;
+        meta.textContent = formatProgressLabel(item.progress);
+
+        content.append(link, sub);
+        listItem.append(content, meta);
+        target.append(listItem);
+      });
+    }
+
+    function renderSettings(settings: ReturnType<typeof getReadingDashboardSnapshot>['settings']) {
+      if (!settingsList) {
+        return;
+      }
+
+      settingsList.replaceChildren();
+
+      const settingEntries = [
+        ['字体大小', `${settings.fontSize} px`],
+        ['行距', settings.lineHeight.toFixed(1)],
+        ['版心宽度', `${settings.contentWidth} px`],
+        ['阅读主题', formatThemeLabel(settings.theme)],
+      ];
+
+      settingEntries.forEach(([label, value]) => {
+        const wrapper = document.createElement('div');
+        const term = document.createElement('dt');
+        const definition = document.createElement('dd');
+
+        wrapper.className = 'reading-setting-item';
+        term.textContent = label;
+        definition.textContent = value;
+
+        wrapper.append(term, definition);
+        settingsList.append(wrapper);
+      });
+    }
+
+    function renderDashboard() {
+      const state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const snapshot = getReadingDashboardSnapshot(state);
+
+      renderActiveBooks(snapshot.activeBooks);
+      renderLogList(bookmarkList, snapshot.recentBookmarks, '还没有书签，读到喜欢的位置时再记一下。');
+      renderLogList(historyList, snapshot.recentHistory, '还没有最近阅读记录。');
+      renderSettings(snapshot.settings);
+    }
+
+    renderDashboard();
+    window.addEventListener('storage', (event) => {
+      if (event.key === READER_STORAGE_KEY) {
+        renderDashboard();
+      }
+    });
+  }
+</script>
+
+<style>
+  .reading-dashboard {
+    margin: 1.5rem 0 3rem;
+  }
+
+  .reading-dashboard-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .reading-dashboard-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .reading-dashboard-notice {
+    margin-bottom: 1.5rem;
+  }
+
+  .reading-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .reading-panel {
+    min-height: 100%;
+  }
+
+  .reading-panel-head {
+    align-items: flex-start;
+  }
+
+  .reading-panel-title {
+    display: block;
+    color: var(--ink-900);
+    font-size: 1rem;
+  }
+
+  .reading-panel-sub {
+    margin: 0.35rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .reading-active-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .reading-book-card,
+  .reading-empty-card {
+    border: var(--border);
+    border-radius: 18px;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .reading-book-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+
+  .reading-book-title {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  .reading-book-meta,
+  .reading-book-detail,
+  .reading-book-desc,
+  .reading-log-sub {
+    margin: 0.45rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .reading-book-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .reading-book-progress {
+    margin: 0.8rem 0 0;
+    color: var(--ink-900);
+    font-weight: 700;
+  }
+
+  .reading-book-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.9rem;
+  }
+
+  .reading-log-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .reading-log-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    align-items: baseline;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px dashed rgba(24, 19, 15, 0.12);
+  }
+
+  .reading-log-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .reading-log-content {
+    min-width: 0;
+  }
+
+  .reading-settings-grid {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  .reading-setting-item {
+    margin: 0;
+    border: var(--border);
+    border-radius: 14px;
+    padding: 0.9rem;
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .reading-setting-item dt {
+    margin: 0 0 0.35rem;
+    color: var(--accent-600);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+  }
+
+  .reading-setting-item dd {
+    margin: 0;
+    color: var(--ink-900);
+    font-weight: 700;
+  }
+
+  .reading-empty-card h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1.1rem;
+  }
+
+  .reading-empty-card p {
+    margin: 0;
+    color: var(--ink-500);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 980px) {
+    .reading-dashboard-grid,
+    .reading-active-grid,
+    .reading-settings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .reading-dashboard-head {
+      flex-direction: column;
+    }
+
+    .reading-dashboard-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1553,3 +1553,41 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
 - `bun run test`：`76` 个测试全部通过
 - `bun run build`：成功，`502` pages
 - `bun run build:verify`：`1101` 项检查全部通过
+
+### 七、同日补充：新增“我的阅读”聚合页
+
+为了让站点更像一个能回访、能续读的小型读书馆，本轮继续补了一页面向读者自己的聚合入口：
+
+- 新增 `我的阅读` 页面
+  - 路由：`/reading`
+  - 顶部导航已补入口：`我的阅读`
+  - 页面会集中展示：
+    - `继续阅读中的书`
+    - `最近书签`
+    - `最近足迹`
+    - `当前阅读设置`
+- 数据来源
+  - 直接读取本机浏览器 `localStorage` 中的 `mochao-reader-state`
+  - 不依赖后端，可随当前静态站一起部署
+- 本轮新增代码
+  - `src/components/ReadingDashboard.astro`
+    - 新增聚合页组件
+    - 可直接跳回章节、回到书页、下载 EPUB
+  - `src/pages/reading.astro`
+    - 新增独立页面
+  - `src/layouts/Base.astro`
+    - 顶部导航新增 `我的阅读`
+  - `src/lib/reader-state.ts`
+    - 新增 `getReadingDashboardSnapshot(...)`
+    - 用于聚合在读书目、最近书签、最近历史与阅读设置
+- 本轮新增测试
+  - `tests/reader-state.test.ts`
+    - 新增阅读总览聚合与排序断言
+  - `tests/build-verify.ts`
+    - 新增 `/reading.html` 存在性与关键模块校验
+
+这轮本地验证结果：
+
+- `bun run test`：`77` 个测试全部通过
+- `bun run build`：成功，`503` pages
+- `bun run build:verify`：`1108` 项检查全部通过

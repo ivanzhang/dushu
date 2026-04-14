@@ -88,6 +88,7 @@ const requiredPages = [
   '404.html',
   'about.html',
   'category.html',
+  'reading.html',
   'search.html',
   'about/copyright.html',
 ];
@@ -105,6 +106,12 @@ check(indexHtml.includes('最近入藏'), '首页缺少 最近入藏 模块');
 check(indexHtml.includes('怎么逛这座小馆'), '首页缺少 怎么逛这座小馆');
 check(indexHtml.includes('按兴趣进入'), '首页缺少 按兴趣进入');
 check(indexHtml.includes('馆藏地图'), '首页缺少 馆藏地图');
+
+const readingHtml = readFileSync(join(DIST, 'reading.html'), 'utf-8');
+check(readingHtml.includes('我的阅读'), '我的阅读页缺少 我的阅读 标题');
+check(readingHtml.includes('继续阅读中的书'), '我的阅读页缺少 继续阅读中的书 模块');
+check(readingHtml.includes('最近书签'), '我的阅读页缺少 最近书签 模块');
+check(readingHtml.includes('最近足迹'), '我的阅读页缺少 最近足迹 模块');
 
 // 分类页需要升级成分馆页
 const categoryIndexHtml = readFileSync(join(DIST, 'category.html'), 'utf-8');

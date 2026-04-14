@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import ReadingDashboard from '../components/ReadingDashboard.astro';
+import Base from '../layouts/Base.astro';
+import { buildBookDisplayMaps } from '../lib/library';
+
+const books = await getCollection('books');
+const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(books);
+
+const bookMetaList = books.map((book) => ({
+  slug: book.id,
+  title: book.data.title,
+  author: book.data.author,
+  summary: book.data.summary,
+  wordCount: book.data.wordCount,
+  tierLabel: tierLabelMap[book.id],
+  completionLevel: completionLevelMap[book.id],
+}));
+---
+
+<Base
+  title="我的阅读"
+  description="集中查看当前浏览器里的继续阅读、最近足迹、书签与阅读设置。"
+  pagefindIgnore={true}
+>
+  <div class="container">
+    <header class="page-header reading-page-header">
+      <h1 class="page-title">我的阅读</h1>
+      <p class="page-subtitle">
+        一个回访页，把继续阅读、最近书签、最近足迹和阅读设置都收拢到一起，回来就能马上接着读。
+      </p>
+    </header>
+
+    <ReadingDashboard bookMetaList={bookMetaList} />
+  </div>
+</Base>
+
+<style>
+  .reading-page-header {
+    padding-top: 1.5rem;
+  }
+</style>

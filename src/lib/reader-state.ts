@@ -45,6 +45,18 @@ export interface ReaderState {
   bookmarks: ReaderBookmarkEntry[];
 }
 
+export interface ReadingDashboardBookEntry extends ReaderProgressEntry {
+  historyCount: number;
+  bookmarkCount: number;
+}
+
+export interface ReadingDashboardSnapshot {
+  activeBooks: ReadingDashboardBookEntry[];
+  recentHistory: ReaderHistoryEntry[];
+  recentBookmarks: ReaderBookmarkEntry[];
+  settings: ReaderSettings;
+}
+
 export const READER_STORAGE_KEY = 'mochao-reader-state';
 export const MAX_READER_HISTORY = 12;
 export const MAX_BOOKMARKS_PER_BOOK = 12;
@@ -196,6 +208,27 @@ export function getBookReadingSnapshot(state: ReaderState, bookSlug: string) {
     progress: state.progress[bookSlug],
     history: state.history.filter((item) => item.bookSlug === bookSlug),
     bookmarks: state.bookmarks.filter((item) => item.bookSlug === bookSlug),
+  };
+}
+
+// 生成“我的阅读”页所需的聚合快照，集中展示在读、书签与历史。
+// 使用示例：
+// const dashboard = getReadingDashboardSnapshot(state);
+export function getReadingDashboardSnapshot(state: ReaderState): ReadingDashboardSnapshot {
+  const historyCountMap = countEntriesByBook(state.history);
+  const bookmarkCountMap = countEntriesByBook(state.bookmarks);
+
+  return {
+    activeBooks: Object.values(state.progress)
+      .map((entry) => ({
+        ...entry,
+        historyCount: historyCountMap[entry.bookSlug] ?? 0,
+        bookmarkCount: bookmarkCountMap[entry.bookSlug] ?? 0,
+      }))
+      .sort((left, right) => right.updatedAt - left.updatedAt),
+    recentHistory: [...state.history].sort((left, right) => right.visitedAt - left.visitedAt),
+    recentBookmarks: [...state.bookmarks].sort((left, right) => right.createdAt - left.createdAt),
+    settings: { ...state.settings },
   };
 }
 
@@ -388,4 +421,11 @@ function isSameChapter(
   rightChapterSlug: string,
 ): boolean {
   return leftBookSlug === rightBookSlug && leftChapterSlug === rightChapterSlug;
+}
+
+function countEntriesByBook(entries: Array<{ bookSlug: string }>): Record<string, number> {
+  return entries.reduce<Record<string, number>>((accumulator, entry) => {
+    accumulator[entry.bookSlug] = (accumulator[entry.bookSlug] ?? 0) + 1;
+    return accumulator;
+  }, {});
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as readerState from '../src/lib/reader-state';
 import {
   MAX_READER_HISTORY,
   createDefaultReaderState,
@@ -219,5 +220,87 @@ describe('reader state helpers', () => {
     });
 
     expect(persisted).toBe(1);
+  });
+
+  it('阅读总览会按最近更新时间输出在读书目，并汇总书签与历史数量', () => {
+    expect(typeof (readerState as Record<string, unknown>).getReadingDashboardSnapshot).toBe('function');
+
+    let state = createDefaultReaderState();
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '002',
+      chapterTitle: '张翼德怒鞭督邮',
+      chapterNumber: 2,
+      progress: 0.41,
+      updatedAt: 1713000001000,
+    });
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.76,
+      updatedAt: 1713000003000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.76,
+      visitedAt: 1713000003000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '002',
+      chapterTitle: '张翼德怒鞭督邮',
+      chapterNumber: 2,
+      progress: 0.41,
+      visitedAt: 1713000001000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.76,
+      createdAt: 1713000004000,
+    }).state;
+
+    const snapshot = (
+      readerState as Record<string, (value: typeof state) => {
+        activeBooks: Array<{
+          bookSlug: string;
+          historyCount: number;
+          bookmarkCount: number;
+          progress: number;
+          chapterSlug: string;
+        }>;
+      }>
+    ).getReadingDashboardSnapshot(state);
+
+    expect(snapshot.activeBooks.map((item) => item.bookSlug)).toEqual(['hongloumeng', 'sanguoyanyi']);
+    expect(snapshot.activeBooks[0]).toMatchObject({
+      bookSlug: 'hongloumeng',
+      chapterSlug: '003',
+      progress: 0.76,
+      historyCount: 1,
+      bookmarkCount: 1,
+    });
+    expect(snapshot.activeBooks[1]).toMatchObject({
+      bookSlug: 'sanguoyanyi',
+      historyCount: 1,
+      bookmarkCount: 0,
+    });
   });
 });
