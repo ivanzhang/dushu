@@ -151,22 +151,27 @@ export function extractContentFromWikitext(rawText) {
 }
 
 export function extractTitleFromWikitext(rawText) {
-  const novelTitleMatch = rawText.match(/\{\{\s*(?:Novel|novel)\|[^|]+\|([^|]+)\|/);
+  // 章节标题里偶尔会带脚注，先去掉以免打断回目提取。
+  const titleSource = rawText
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, '')
+    .replace(/<ref[^>]*\/>/gi, '');
+
+  const novelTitleMatch = titleSource.match(/\{\{\s*(?:Novel|novel)\|[^|]+\|([^|]+)\|/);
   if (novelTitleMatch?.[1]) {
     return normalizeExtractedLine(novelTitleMatch[1]);
   }
 
-  const inlineHeaderSectionMatch = rawText.match(/\{\{\s*Header\b[^\n]*\|\s*section\s*=\s*([^|\n]+?)(?=\|[a-z]+?\s*=|\}\})/i);
+  const inlineHeaderSectionMatch = titleSource.match(/\{\{\s*Header\b[^\n]*\|\s*section\s*=\s*([^|\n]+?)(?=\|[a-z]+?\s*=|\}\})/i);
   if (inlineHeaderSectionMatch?.[1]) {
     return normalizeExtractedLine(inlineHeaderSectionMatch[1]);
   }
 
-  const headerSectionMatch = rawText.match(/^\|\s*section\s*=\s*(.+)$/im);
+  const headerSectionMatch = titleSource.match(/^\|\s*section\s*=\s*(.+)$/im);
   if (headerSectionMatch?.[1]) {
     return normalizeExtractedLine(headerSectionMatch[1]);
   }
 
-  const centeredTitleMatch = rawText.match(/\{\{\s*center\s*\|\s*'''([^']+)'''\s*\}\}/i);
+  const centeredTitleMatch = titleSource.match(/\{\{\s*center\s*\|\s*'''([^']+)'''\s*\}\}/i);
   if (centeredTitleMatch?.[1]) {
     return normalizeExtractedLine(centeredTitleMatch[1]);
   }

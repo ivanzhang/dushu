@@ -203,6 +203,19 @@ describe('chapter fetch helpers', () => {
     expect(extractContentFromWikitext(raw)).not.toContain('----');
   });
 
+  it('能从带脚注的红楼梦居中标题模板里提取回目', () => {
+    const raw = `{{样式:古典小說}}
+[[../第029回|上一回]]　[[../|回目录]]　[[../第031回|下一回]]
+
+----
+
+{{center|'''第三十回　寶釵借扇机帶雙敲　齡官划薔痴及局外'''<ref>本回回目有异文。</ref>}}
+
+話說林黛玉與寶玉角口後，也自後悔。`;
+
+    expect(extractTitleFromWikitext(raw)).toBe('第三十回　寶釵借扇机帶雙敲　齡官划薔痴及局外');
+  });
+
   it('能从单行 Header 模板里提取 section 标题，避免说岳全传落成诗曰', () => {
     const raw = `{{Header|title=說岳全傳|section=第十三回 昭豐鎮王貴染病　牟駝岡宗澤踹營|previous=[[../第十二回|第十二回 奪狀元槍挑小梁王　反武場放走岳鵬舉]]|next=[[../第十四回|第十四回 岳飛破賊酬知己　施全剪徑遇良朋]]}}
 

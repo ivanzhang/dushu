@@ -74,6 +74,22 @@ check(readerChapterHtml.includes('恢复上次进度'), '/book/hongloumeng/001.h
 check(readerChapterHtml.includes('本书目录速览'), '/book/hongloumeng/001.html 缺少 本书目录速览 模块');
 check(readerChapterHtml.includes('快速跳章'), '/book/hongloumeng/001.html 缺少 快速跳章 入口');
 
+// 红楼梦部分章节曾因带脚注回目导致标题抽取错误，这里锁定真实回目避免回归。
+const lockedHongloumengTitles: Array<[string, string]> = [
+  ['005', '第五回　開生面夢演紅樓夢　立新場情傳幻境情'],
+  ['007', '第七回　送宮花周瑞嘆英蓮　談肄業秦鐘結寶玉'],
+  ['008', '第八回　薛寶釵小恙梨香院　賈寶玉大醉絳芸軒'],
+  ['009', '第九回　戀風流情友入家塾　起嫌疑頑童鬧學堂'],
+  ['017', '第十七回　會芳園試才題對額　賈寶玉機敏動諸賓'],
+  ['018', '第十八回　林黛玉誤剪香囊袋　賈元春歸省慶元宵'],
+  ['030', '第三十回　寶釵借扇机帶雙敲　齡官划薔痴及局外'],
+];
+
+for (const [chapter, title] of lockedHongloumengTitles) {
+  const chapterHtml = readFileSync(join(DIST, 'book', 'hongloumeng', `${chapter}.html`), 'utf-8');
+  check(chapterHtml.includes(title), `/book/hongloumeng/${chapter}.html 标题未锁定为正确回目`);
+}
+
 // 构建产物里应包含可下载的 EPUB 文件
 const epubFiles = ['hongloumeng', 'sanguoyanyi', 'xiyouji', 'sanxiawuyi', 'shuoyuequanzhuan'];
 for (const slug of epubFiles) {
