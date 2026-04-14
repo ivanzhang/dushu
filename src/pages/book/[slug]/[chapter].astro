@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import ReaderControls from '../../../components/ReaderControls.astro';
 import ChapterNav from '../../../components/ChapterNav.astro';
+import ChapterQuickNav from '../../../components/ChapterQuickNav.astro';
 import {
   getChapterBookIdsForBook,
   normalizeChapterBookSlug,
@@ -66,6 +67,11 @@ const nextSlug = nextChapter
 
 const totalChapters = bookChapters.length;
 const currentChapterNumber = chapter.data.chapterNumber;
+const chapterQuickNavItems = bookChapters.map((item) => ({
+  slug: item.id.split('/').pop()!,
+  title: item.data.title,
+  chapterNumber: item.data.chapterNumber,
+}));
 ---
 
 <Base
@@ -91,6 +97,14 @@ const currentChapterNumber = chapter.data.chapterNumber;
       chapterTitle={chapter.data.title}
       chapterNumber={currentChapterNumber}
       totalChapters={totalChapters}
+    />
+
+    <ChapterQuickNav
+      bookSlug={canonicalBookSlug}
+      currentChapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
+      currentChapterNumber={currentChapterNumber}
+      totalChapters={totalChapters}
+      chapters={chapterQuickNavItems}
     />
 
     <!-- 章节上导航 -->

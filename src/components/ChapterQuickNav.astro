@@ -1,0 +1,241 @@
+---
+/**
+ * ChapterQuickNav.astro
+ * 章节页目录速览与快速跳章卡片。
+ *
+ * 使用示例：
+ * <ChapterQuickNav
+ *   bookSlug="hongloumeng"
+ *   currentChapterSlug="001"
+ *   currentChapterNumber={1}
+ *   totalChapters={120}
+ *   chapters={[
+ *     { slug: '001', title: '甄士隐梦幻识通灵', chapterNumber: 1 },
+ *   ]}
+ * />
+ */
+
+interface ChapterQuickNavItem {
+  slug: string;
+  title: string;
+  chapterNumber: number;
+}
+
+interface Props {
+  bookSlug: string;
+  currentChapterSlug: string;
+  currentChapterNumber: number;
+  totalChapters: number;
+  chapters: ChapterQuickNavItem[];
+}
+
+const {
+  bookSlug,
+  currentChapterSlug,
+  currentChapterNumber,
+  totalChapters,
+  chapters,
+} = Astro.props;
+
+const currentIndex = chapters.findIndex((item) => item.slug === currentChapterSlug);
+const startIndex = Math.max(0, currentIndex - 4);
+const endIndex = Math.min(chapters.length, startIndex + 9);
+const visibleChapters = chapters.slice(startIndex, endIndex);
+const overviewHref = `/book/${bookSlug}`;
+---
+
+<section class="reading-guide-card chapter-quick-nav" data-chapter-quick-nav>
+  <div class="chapter-quick-nav-head">
+    <div>
+      <h2 class="section-title">本书目录速览</h2>
+      <p class="book-progress-text">
+        不必先回书页，也能在章节里直接快速跳章；当前读到第 {currentChapterNumber} 章，共 {totalChapters} 章。
+      </p>
+    </div>
+
+    <div class="chapter-quick-nav-actions">
+      <a href={overviewHref} class="btn btn-secondary btn-sm">全书目录</a>
+    </div>
+  </div>
+
+  <div class="chapter-jump-row">
+    <label class="chapter-jump-field">
+      <span>快速跳章</span>
+      <select data-chapter-jump aria-label="快速跳章">
+        {chapters.map((item) => (
+          <option
+            value={`/book/${bookSlug}/${item.slug}`}
+            selected={item.slug === currentChapterSlug}
+          >
+            第 {item.chapterNumber} 章 · {item.title}
+          </option>
+        ))}
+      </select>
+    </label>
+
+    <p class="chapter-jump-note">
+      当前展示目录速览窗口；若想跨得更远，可直接用上面的下拉框跳到任意章节。
+    </p>
+  </div>
+
+  <ol class="chapter-quick-list">
+    {visibleChapters.map((item) => {
+      const href = `/book/${bookSlug}/${item.slug}`;
+      const isCurrent = item.slug === currentChapterSlug;
+
+      return (
+        <li class={`chapter-quick-item${isCurrent ? ' active' : ''}`}>
+          {isCurrent ? (
+            <span class="chapter-quick-link" aria-current="page">
+              <span class="chapter-quick-number">第 {item.chapterNumber} 章</span>
+              <span class="chapter-quick-title">{item.title}</span>
+              <span class="chapter-quick-state">当前阅读</span>
+            </span>
+          ) : (
+            <a href={href} class="chapter-quick-link">
+              <span class="chapter-quick-number">第 {item.chapterNumber} 章</span>
+              <span class="chapter-quick-title">{item.title}</span>
+              <span class="chapter-quick-state">跳到这里</span>
+            </a>
+          )}
+        </li>
+      );
+    })}
+  </ol>
+</section>
+
+<script>
+  const chapterJump = document.querySelector<HTMLSelectElement>('[data-chapter-jump]');
+
+  if (chapterJump) {
+    // 下拉选择后立刻跳到目标章节，减少回目录再找章节的操作成本。
+    chapterJump.addEventListener('change', () => {
+      const target = chapterJump.value;
+      if (target) {
+        window.location.href = target;
+      }
+    });
+  }
+</script>
+
+<style>
+  .chapter-quick-nav {
+    margin-bottom: 1.5rem;
+  }
+
+  .chapter-quick-nav-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .chapter-quick-nav-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .chapter-jump-row {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1rem;
+  }
+
+  .chapter-jump-field {
+    display: grid;
+    gap: 0.45rem;
+    color: var(--ink-700);
+    font-size: 0.92rem;
+  }
+
+  .chapter-jump-field span {
+    color: var(--accent-600);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+  }
+
+  .chapter-jump-field select {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border: var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--ink-900);
+    font: inherit;
+  }
+
+  .chapter-jump-note {
+    margin: 0;
+    color: var(--ink-500);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .chapter-quick-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .chapter-quick-item {
+    border: var(--border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .chapter-quick-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .chapter-quick-item.active {
+    border-color: rgba(204, 92, 47, 0.28);
+    background: linear-gradient(135deg, rgba(204, 92, 47, 0.08), rgba(31, 127, 123, 0.08));
+  }
+
+  .chapter-quick-link {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.95rem 1rem;
+    color: var(--ink-700);
+  }
+
+  .chapter-quick-title {
+    min-width: 0;
+    line-height: 1.65;
+  }
+
+  .chapter-quick-number,
+  .chapter-quick-state {
+    color: var(--ink-500);
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+
+  .chapter-quick-item.active .chapter-quick-state {
+    color: var(--accent-600);
+    font-weight: 700;
+  }
+
+  @media (max-width: 840px) {
+    .chapter-quick-nav-head,
+    .chapter-jump-row {
+      grid-template-columns: 1fr;
+      display: grid;
+    }
+
+    .chapter-quick-link {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+    }
+  }
+</style>
