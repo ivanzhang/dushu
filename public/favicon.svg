@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mochao">
+  <defs>
+    <linearGradient id="g" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#cc5c2f" />
+      <stop offset="100%" stop-color="#1f7f7b" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)" />
+  <path
+    d="M14 46V18h8l10 16 10-16h8v28h-7V29L35 42h-6L21 29v17z"
+    fill="#fff7ef"
+  />
+</svg>

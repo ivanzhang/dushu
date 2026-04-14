@@ -95,6 +95,8 @@ for (const page of requiredPages) {
   check(existsSync(join(DIST, page)), `缺少页面: ${page}`);
 }
 
+check(existsSync(join(DIST, 'favicon.svg')), '缺少站点图标: favicon.svg');
+
 // 首页需要具备读书馆入口模块
 const indexHtml = readFileSync(join(DIST, 'index.html'), 'utf-8');
 check(indexHtml.includes('馆长推荐'), '首页缺少 馆长推荐 模块');

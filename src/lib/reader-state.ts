@@ -213,6 +213,34 @@ export function formatProgressLabel(progress: number): string {
   return `${Math.round(normalizeProgress(progress) * 100)}%`;
 }
 
+// 解决页面卸载瞬间 DOM 测量回落导致的进度被冲成 0 的问题。
+// 使用示例：
+// const next = resolvePersistedReadingProgress({
+//   currentProgress: 1,
+//   measuredProgress: 0,
+//   force: true,
+// });
+export function resolvePersistedReadingProgress(input: {
+  currentProgress: number;
+  measuredProgress: number;
+  force: boolean;
+}): number {
+  const currentProgress = normalizeProgress(input.currentProgress);
+  const measuredProgress = normalizeProgress(input.measuredProgress);
+
+  if (!input.force) {
+    return measuredProgress;
+  }
+
+  // 页面切换时浏览器可能先把滚动位置重置，再触发强制落盘。
+  // 这种情况下测量值会瞬间掉成 0，此时保留上一份有效进度更安全。
+  if (currentProgress >= 0.03 && measuredProgress === 0) {
+    return currentProgress;
+  }
+
+  return measuredProgress;
+}
+
 function normalizeReaderSettings(
   settings: Partial<ReaderSettings> | undefined,
 ): ReaderSettings {

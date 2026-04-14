@@ -1504,3 +1504,27 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
    - 任意一本书页的 `继续阅读`
    - 任意一本书页的 `下载 EPUB`
    - 任意一章的进度保存 / 书签 / 历史
+
+### 五、同日补充：线上真实阅读流程走查修复
+
+在部署上线后又做了一轮线上真实阅读流程走查，额外修了两处会影响回访体验的问题：
+
+- 修复章节页离开时阅读进度被意外写回 `0%` 的问题
+  - 根因是页面卸载阶段强制落盘再次从 DOM 测量进度，浏览器切页瞬间会把测量值打回 `0`
+  - 现已在 `src/lib/reader-state.ts` 新增强制落盘进度决策函数，并在 `src/components/ReaderControls.astro` 接入
+- 补齐站点图标文件
+  - 新增 `public/favicon.svg`
+  - 修复线上浏览器控制台 `favicon.svg 404`
+
+对应补充测试：
+
+- `tests/reader-state.test.ts`
+  - 新增强制落盘进度不应异常回退到 `0` 的断言
+- `tests/build-verify.ts`
+  - 新增 `favicon.svg` 产物校验
+
+这轮补修后的本地验证结果：
+
+- `bun run test`：`75` 个测试全部通过
+- `bun run build`：成功，`502` pages
+- `bun run build:verify`：`1101` 项检查全部通过

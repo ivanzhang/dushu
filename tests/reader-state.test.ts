@@ -5,6 +5,7 @@ import {
   getBookReadingSnapshot,
   parseReaderState,
   patchReaderSettings,
+  resolvePersistedReadingProgress,
   recordReadingHistory,
   toggleBookmark,
   updateReadingProgress,
@@ -187,5 +188,25 @@ describe('reader state helpers', () => {
     expect(snapshot.history).toHaveLength(1);
     expect(snapshot.bookmarks).toHaveLength(1);
     expect(snapshot.history[0]?.bookSlug).toBe('hongloumeng');
+  });
+
+  it('强制落盘时如果测得进度异常回退，不应覆盖掉已有阅读进度', () => {
+    const persisted = resolvePersistedReadingProgress({
+      currentProgress: 1,
+      measuredProgress: 0,
+      force: true,
+    });
+
+    expect(persisted).toBe(1);
+  });
+
+  it('普通滚动落盘时仍应使用最新测得进度', () => {
+    const persisted = resolvePersistedReadingProgress({
+      currentProgress: 0.35,
+      measuredProgress: 0.62,
+      force: false,
+    });
+
+    expect(persisted).toBe(0.62);
   });
 });

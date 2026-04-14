@@ -143,6 +143,7 @@ const {
     parseReaderState,
     patchReaderSettings,
     recordReadingHistory,
+    resolvePersistedReadingProgress,
     serializeReaderState,
     toggleBookmark,
     updateReadingProgress,
@@ -306,7 +307,11 @@ const {
     }
 
     function persistCurrentProgress(force = false) {
-      const nextProgress = calculateProgress();
+      const nextProgress = resolvePersistedReadingProgress({
+        currentProgress,
+        measuredProgress: calculateProgress(),
+        force,
+      });
 
       if (!force && Math.abs(nextProgress - currentProgress) < 0.02) {
         return;
