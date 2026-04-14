@@ -1,0 +1,28 @@
+{
+  "title": "古文观止",
+  "author": "吴楚材、吴调侯",
+  "authorSlug": "wuchucai-wudiaohou",
+  "dynasty": "清代",
+  "category": [
+    "古文入门"
+  ],
+  "tags": [
+    "古文",
+    "选本",
+    "散文",
+    "入门"
+  ],
+  "wordCount": 300000,
+  "chapterCount": 222,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，编者吴楚材、吴调侯均为清代人物，逝世已超过200年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E5%8F%A4%E6%96%87%E8%A7%80%E6%AD%A2",
+  "summary": "《古文观止》长期被视为古文入门经典选本，适合作为非小说入口，帮助站点从“小说站”真正长成一个更完整的小型读书馆。",
+  "collectionTier": "featured",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "classical-prose"
+  ]
+}

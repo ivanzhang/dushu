@@ -1,0 +1,143 @@
+---
+import { getCollection } from 'astro:content';
+import CuratedShelf from '../../components/CuratedShelf.astro';
+import { type LibraryTopicMeta } from '../../data/library/topics';
+import Base from '../../layouts/Base.astro';
+import {
+  buildBookDisplayMaps,
+  categoryNameToRouteSlug,
+  getFeaturedAuthorsForTopic,
+  getCategoryMetaBySlug,
+  getRelatedTopicsForTopic,
+  libraryTopics,
+  pickPlannedBooks,
+  pickBooksByTopic,
+  sortBooksByPlan,
+} from '../../lib/library';
+
+export async function getStaticPaths() {
+  return libraryTopics.map((topic) => ({
+    params: { slug: topic.slug },
+    props: { topic },
+  }));
+}
+
+interface Props {
+  topic: LibraryTopicMeta;
+}
+
+const { topic } = Astro.props;
+const books = sortBooksByPlan(await getCollection('books'));
+const topicBooks = pickBooksByTopic(books, topic.slug);
+const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(topicBooks);
+const readingPathBooks = pickPlannedBooks(books, topic.readingPathBookSlugs ?? []);
+const relatedCategories = (topic.relatedCategorySlugs ?? [])
+  .map((slug) => getCategoryMetaBySlug(slug))
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
+const relatedTopics = getRelatedTopicsForTopic(topic);
+const featuredAuthors = getFeaturedAuthorsForTopic(topic);
+---
+
+<Base
+  title={`${topic.name} · 专题`}
+  description={`${topic.name}专题页，按策展主题浏览墨潮读书当前已经收录的作品。`}
+>
+  <div class="container">
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>专题</span>
+      <span class="breadcrumb-sep">›</span>
+      <span aria-current="page">{topic.name}</span>
+    </nav>
+
+    <section class="hall-hero">
+      <p class="hero-kicker">专题</p>
+      <h1 class="page-title">{topic.name}</h1>
+      <p class="page-subtitle">{topic.description}</p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">策展缘起</h2>
+      <p>
+        {topic.curatorNote}
+      </p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">阅读路线</h2>
+      {readingPathBooks.length > 0 ? (
+        <ol class="reading-order-list">
+          {readingPathBooks.map((book) => (
+            <li>
+              <a href={`/book/${book.id}`}>《{book.data.title}》</a>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p>这个专题的阅读路线还在整理中。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">相关分馆</h2>
+      {relatedCategories.length > 0 ? (
+        <ul class="reading-order-list">
+          {relatedCategories.map((category) => (
+            <li>
+              <a href={`/category/${categoryNameToRouteSlug(category.name)}`}>{category.name}</a>
+              {'：'}
+              {category.description}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>相关分馆入口正在补充中。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">相关专题</h2>
+      {relatedTopics.length > 0 ? (
+        <ul class="reading-order-list">
+          {relatedTopics.map((relatedTopic) => (
+            <li>
+              <a href={`/topic/${relatedTopic.slug}`}>{relatedTopic.name}</a>
+              {'：'}
+              {relatedTopic.description}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>相关专题入口正在补充中。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">作者入口</h2>
+      {featuredAuthors.length > 0 ? (
+        <ul class="reading-order-list">
+          {featuredAuthors.map((author) => (
+            <li>
+              <a href={`/author/${author.slug}`}>{author.name}</a>
+              {'：'}
+              {author.summary}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>适合从谁开始读，这一组作者入口还在补充中。</p>
+      )}
+    </section>
+
+    <CuratedShelf
+      title="专题馆藏"
+      description="当前已经落库、可以直接进入阅读的作品。"
+      books={topicBooks}
+      showCompletion={true}
+      tierLabelMap={tierLabelMap}
+      completionLevelMap={completionLevelMap}
+      emptyText="这个专题的重点馆藏还在陆续补齐中。"
+    />
+  </div>
+</Base>

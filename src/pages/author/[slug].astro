@@ -1,12 +1,22 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../../layouts/Base.astro';
+import CuratedShelf from '../../components/CuratedShelf.astro';
 import BookCard from '../../components/BookCard.astro';
+import Base from '../../layouts/Base.astro';
+import {
+  buildBookDisplayMaps,
+  categoryNameToRouteSlug,
+  getAuthorProfileBySlug,
+  getCategoryMetaBySlug,
+  getTopicMetaBySlug,
+  pickPlannedBooks,
+  sortBooksByPlan,
+} from '../../lib/library';
 
 export async function getStaticPaths() {
   const books = await getCollection('books');
 
-  // 按 authorSlug 分组
+  // 按 authorSlug 分组，确保每位已落库作者都有自己的展架页。
   const authorMap = new Map<string, { name: string; dynasty?: string }>();
   for (const book of books) {
     if (!authorMap.has(book.data.authorSlug)) {
@@ -30,17 +40,34 @@ interface Props {
 
 const { slug } = Astro.params;
 const { authorName, dynasty } = Astro.props;
-
 const allBooks = await getCollection('books');
-const authorBooks = allBooks.filter((book) => book.data.authorSlug === slug);
+const authorBooks = sortBooksByPlan(
+  allBooks.filter((book) => book.data.authorSlug === slug),
+);
+const authorProfile = slug ? getAuthorProfileBySlug(slug) : undefined;
+const recommendedBooks = authorProfile
+  ? pickPlannedBooks(authorBooks, authorProfile.recommendedBookSlugs)
+  : authorBooks.slice(0, 3);
+const showcaseBooks = recommendedBooks.length > 0
+  ? recommendedBooks
+  : authorBooks.slice(0, 3);
+const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(authorBooks);
+const entryBook = authorProfile?.entryBookSlug
+  ? authorBooks.find((book) => book.id === authorProfile.entryBookSlug)
+  : showcaseBooks[0];
+const relatedCategories = (authorProfile?.relatedCategorySlugs ?? [])
+  .map((categorySlug) => getCategoryMetaBySlug(categorySlug))
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
+const relatedTopics = (authorProfile?.relatedTopicSlugs ?? [])
+  .map((topicSlug) => getTopicMetaBySlug(topicSlug))
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
 ---
 
 <Base
   title={`${authorName} · 作者`}
-  description={`${authorName}${dynasty ? `（${dynasty}）` : ''}的作品列表，共 ${authorBooks.length} 部，免费在线阅读。`}
+  description={`${authorName}${dynasty ? `（${dynasty}）` : ''}的作者展架页，包含简介、本站收录与推荐阅读顺序。`}
 >
   <div class="container">
-    <!-- 面包屑 -->
     <nav class="breadcrumb" aria-label="面包屑">
       <a href="/">首页</a>
       <span class="breadcrumb-sep">›</span>
@@ -49,7 +76,6 @@ const authorBooks = allBooks.filter((book) => book.data.authorSlug === slug);
       <span aria-current="page">{authorName}</span>
     </nav>
 
-    <!-- 作者简介 -->
     <header class="author-header">
       <div class="author-avatar" aria-hidden="true">
         {authorName.slice(0, 1)}
@@ -57,17 +83,113 @@ const authorBooks = allBooks.filter((book) => book.data.authorSlug === slug);
       <div class="author-info">
         <h1 class="author-name">{authorName}</h1>
         <div class="author-meta">
-          {dynasty && (
-            <span class="tag">{dynasty}</span>
+          {(authorProfile?.era ?? dynasty) && (
+            <span class="tag">{authorProfile?.era ?? dynasty}</span>
           )}
           <span class="author-works-count">{authorBooks.length} 部作品</span>
         </div>
       </div>
     </header>
 
-    <!-- 作品列表 -->
-    <section>
-      <h2 class="section-title">全部作品</h2>
+    <section class="author-summary-card">
+      <h2 class="section-title">作者简介</h2>
+      <p>
+        {authorProfile?.summary ?? `${authorName}相关展架文案正在整理中，后续会继续补完作者背景与阅读路线。`}
+      </p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">馆内定位</h2>
+      <p>
+        {authorProfile?.libraryRole ?? `${authorName}在馆内的策展定位还在整理中。`}
+      </p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">气质标签</h2>
+      {(authorProfile?.styleTags.length ?? 0) > 0 ? (
+        <div class="book-tags">
+          {authorProfile?.styleTags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+      ) : (
+        <p>作者气质标签正在补充中。</p>
+      )}
+    </section>
+
+    <CuratedShelf
+      title="代表作品"
+      description="先看这位作者最适合本站当前阶段展示的作品。"
+      books={showcaseBooks}
+      showCompletion={true}
+      tierLabelMap={tierLabelMap}
+      completionLevelMap={completionLevelMap}
+      emptyText="代表作品正在整理中。"
+    />
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">从哪本开始</h2>
+      {entryBook ? (
+        <p>
+          如果你第一次读 {authorName}，建议先从
+          <a href={`/book/${entryBook.id}`}>《{entryBook.data.title}》</a>
+          开始，再按下面的顺序往下逛。
+        </p>
+      ) : (
+        <p>入门书正在补充中。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">推荐阅读顺序</h2>
+      {showcaseBooks.length > 0 ? (
+        <ol class="reading-order-list">
+          {showcaseBooks.map((book) => (
+            <li>
+              <a href={`/book/${book.id}`}>《{book.data.title}》</a>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p>推荐阅读顺序正在补充中。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">顺手再逛</h2>
+      {(relatedCategories.length > 0 || relatedTopics.length > 0) ? (
+        <ul class="reading-order-list">
+          {relatedCategories.map((category) => (
+            <li>
+              <a href={`/category/${categoryNameToRouteSlug(category.name)}`}>
+                {category.name}
+              </a>
+              {'：'}
+              {category.description}
+            </li>
+          ))}
+          {relatedTopics.map((topic) => (
+            <li>
+              <a href={`/topic/${topic.slug}`}>{topic.name}</a>
+              {'：'}
+              {topic.description}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>相关分馆和专题正在补充中。</p>
+      )}
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">本站收录</h2>
+          <p class="section-sub">当前站内已收录、可以直接进入阅读的作品。</p>
+        </div>
+      </div>
+
       {authorBooks.length > 0 ? (
         <div class="book-grid">
           {authorBooks.map((book) => (
@@ -80,66 +202,14 @@ const authorBooks = allBooks.filter((book) => book.data.authorSlug === slug);
               status={book.data.status}
               wordCount={book.data.wordCount}
               summary={book.data.summary}
+              tierLabel={tierLabelMap[book.id]}
+              completionLevel={completionLevelMap[book.id]}
             />
           ))}
         </div>
       ) : (
-        <p class="empty-tip">该作者暂无收录作品。</p>
+        <p class="notice">该作者暂无收录作品。</p>
       )}
     </section>
   </div>
 </Base>
-
-<style>
-  .author-header {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
-    padding: 1.75rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-  }
-
-  .author-avatar {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary), #c8792a);
-    color: #fff;
-    font-family: var(--font-serif);
-    font-size: 2rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .author-name {
-    font-family: var(--font-serif);
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .author-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .author-works-count {
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-  }
-
-  .empty-tip {
-    color: var(--color-text-muted);
-    font-size: 1rem;
-    padding: 2rem 0;
-  }
-</style>

@@ -1,0 +1,30 @@
+{
+  "title": "隋唐演义",
+  "author": "褚人获",
+  "authorSlug": "churenhuo",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "历史演义"
+  ],
+  "tags": [
+    "隋唐",
+    "演义",
+    "群雄",
+    "帝王"
+  ],
+  "wordCount": 900000,
+  "chapterCount": 100,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者褚人获为清代文学家，逝世已超过300年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E9%9A%8B%E5%94%90%E6%BC%94%E7%BE%A9",
+  "summary": "《隋唐演义》横跨隋末唐初风云，兼具帝王兴替、群雄逐鹿与传奇人物故事，是历史演义分馆的重要铺面作品。",
+  "collectionTier": "shelf",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "historical-epics",
+    "heroic-tales"
+  ]
+}

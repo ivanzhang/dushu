@@ -1,0 +1,29 @@
+{
+  "title": "封神演义",
+  "author": "许仲琳",
+  "authorSlug": "xuzhonglin",
+  "dynasty": "明代",
+  "category": [
+    "古典小说",
+    "神魔小说"
+  ],
+  "tags": [
+    "封神",
+    "哪吒",
+    "姜子牙",
+    "神怪"
+  ],
+  "wordCount": 700000,
+  "chapterCount": 100,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，通常署许仲琳撰，相关版本作者与编者均已逝世超过300年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E5%B0%81%E7%A5%9E%E6%BC%94%E7%BE%A9",
+  "summary": "《封神演义》把商周更替与神魔斗法并置，既有姜子牙辅周的历史框架，也有哪吒、杨戬等神怪人物，是神魔小说分馆扩容时最自然的第二入口。",
+  "collectionTier": "featured",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "mythic-realms"
+  ]
+}

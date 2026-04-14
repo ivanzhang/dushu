@@ -1,19 +1,25 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../../layouts/Base.astro';
+import CuratedShelf from '../../components/CuratedShelf.astro';
 import BookCard from '../../components/BookCard.astro';
+import Base from '../../layouts/Base.astro';
+import {
+  buildBookDisplayMaps,
+  categoryNameToRouteSlug,
+  getCategoryMetaByName,
+  getCategoryMetaBySlug,
+  pickPlannedBooks,
+  sortBooksByPlan,
+} from '../../lib/library';
 
 export async function getStaticPaths() {
   const books = await getCollection('books');
 
-  // 提取所有唯一分类，生成 slug -> 分类名 映射
+  // 提取所有唯一分类，生成 slug -> 分类名 映射。
   const categoryMap = new Map<string, string>();
   for (const book of books) {
-    for (const cat of book.data.category) {
-      const slug = cat
-        .replace(/[\s　]/g, '-')
-        .replace(/[^\w\u4e00-\u9fff-]/g, '');
-      categoryMap.set(slug, cat);
+    for (const categoryName of book.data.category) {
+      categoryMap.set(categoryNameToRouteSlug(categoryName), categoryName);
     }
   }
 
@@ -27,76 +33,145 @@ interface Props {
   categoryName: string;
 }
 
-const { slug } = Astro.params;
 const { categoryName } = Astro.props;
-
 const allBooks = await getCollection('books');
-const filteredBooks = allBooks.filter((book) =>
-  book.data.category.includes(categoryName),
+const categoryBooks = sortBooksByPlan(
+  allBooks.filter((book) => book.data.category.includes(categoryName)),
 );
+const categoryMeta = getCategoryMetaByName(categoryName);
+const featuredBooks = categoryMeta
+  ? pickPlannedBooks(categoryBooks, categoryMeta.featuredBookSlugs)
+  : categoryBooks.slice(0, 3);
+const representativeBooks = featuredBooks.length > 0
+  ? featuredBooks
+  : categoryBooks.slice(0, 3);
+const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(categoryBooks);
+
+// 把邻馆串逛配置解析为可直接渲染的链接数据。
+const crossShelfEntries = (categoryMeta?.crossShelfLinks ?? [])
+  .map((item) => {
+    const meta = getCategoryMetaBySlug(item.slug);
+    if (!meta) {
+      return null;
+    }
+
+    return {
+      href: `/category/${categoryNameToRouteSlug(meta.name)}`,
+      name: meta.name,
+      reason: item.reason,
+    };
+  })
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
 ---
 
 <Base
-  title={`${categoryName} · 分类`}
-  description={`${categoryName}分类下的经典书籍，共 ${filteredBooks.length} 部作品，免费在线阅读。`}
+  title={`${categoryName} · 分馆`}
+  description={`${categoryName}分馆已收录 ${categoryBooks.length} 部作品，可查看代表作品、完整馆藏与阅读建议。`}
 >
   <div class="container">
-    <!-- 面包屑 -->
     <nav class="breadcrumb" aria-label="面包屑">
       <a href="/">首页</a>
       <span class="breadcrumb-sep">›</span>
-      <span>分类</span>
+      <a href="/category">分类</a>
       <span class="breadcrumb-sep">›</span>
       <span aria-current="page">{categoryName}</span>
     </nav>
 
-    <header class="page-header">
+    <header class="hall-hero">
+      <p class="hero-kicker">分馆</p>
       <h1 class="page-title">{categoryName}</h1>
-      <p class="page-subtitle">共 {filteredBooks.length} 部作品</p>
+      <p class="page-subtitle">共 {categoryBooks.length} 部作品</p>
     </header>
 
-    {filteredBooks.length > 0 ? (
-      <div class="book-grid">
-        {filteredBooks.map((book) => (
-          <BookCard
-            slug={book.id}
-            title={book.data.title}
-            author={book.data.author}
-            category={book.data.category}
-            tags={book.data.tags}
-            status={book.data.status}
-            wordCount={book.data.wordCount}
-            summary={book.data.summary}
-          />
-        ))}
+    <section class="hall-intro-card">
+      <h2 class="section-title">分类简介</h2>
+      <p>
+        {categoryMeta?.description ?? `${categoryName}分馆正在整理策展文案，后续会补上代表作与阅读顺序。`}
+      </p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">适合谁读</h2>
+      <p>
+        {categoryMeta?.audience ?? `如果你想从 ${categoryName} 这个方向建立自己的第一条阅读路线，这里会是不错的入口。`}
+      </p>
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">入馆路线</h2>
+      {(categoryMeta?.entryPath?.length ?? 0) > 0 ? (
+        <ol class="reading-order-list">
+          {categoryMeta?.entryPath.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ol>
+      ) : (
+        <p>建议先看代表作品，再顺着作者页和专题推荐继续扩展。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">邻馆串逛</h2>
+      {crossShelfEntries.length > 0 ? (
+        <ul class="reading-order-list">
+          {crossShelfEntries.map((item) => (
+            <li>
+              <a href={item.href}>{item.name}</a>
+              {'：'}
+              {item.reason}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>这一分馆的邻馆联动还在补充中。</p>
+      )}
+    </section>
+
+    <CuratedShelf
+      title="代表作品"
+      description="先看本分馆最能代表气质的几本书。"
+      books={representativeBooks}
+      showCompletion={true}
+      tierLabelMap={tierLabelMap}
+      completionLevelMap={completionLevelMap}
+      emptyText="这一分馆的代表作品正在整理中。"
+    />
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">完整馆藏</h2>
+          <p class="section-sub">当前这个分馆里已经落库的全部作品。</p>
+        </div>
       </div>
-    ) : (
-      <p class="empty-tip">该分类下暂无书籍。</p>
-    )}
+
+      {categoryBooks.length > 0 ? (
+        <div class="book-grid">
+          {categoryBooks.map((book) => (
+            <BookCard
+              slug={book.id}
+              title={book.data.title}
+              author={book.data.author}
+              category={book.data.category}
+              tags={book.data.tags}
+              status={book.data.status}
+              wordCount={book.data.wordCount}
+              summary={book.data.summary}
+              tierLabel={tierLabelMap[book.id]}
+              completionLevel={completionLevelMap[book.id]}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="notice">这个分馆暂时还没有落库作品。</p>
+      )}
+    </section>
+
+    <section class="reading-guide-card">
+      <h2 class="section-title">阅读建议</h2>
+      <p>
+        {categoryMeta?.readingGuide ?? `建议先从这一分馆中最熟悉的一本开始，再顺着作者与专题推荐继续扩展。`}
+      </p>
+    </section>
   </div>
 </Base>
-
-<style>
-  .page-header {
-    margin-bottom: 1.75rem;
-  }
-
-  .page-title {
-    font-family: var(--font-serif);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 0.35rem;
-  }
-
-  .page-subtitle {
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-  }
-
-  .empty-tip {
-    color: var(--color-text-muted);
-    font-size: 1rem;
-    padding: 2rem 0;
-  }
-</style>

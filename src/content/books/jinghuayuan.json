@@ -1,0 +1,29 @@
+{
+  "title": "镜花缘",
+  "author": "李汝珍",
+  "authorSlug": "liruzhen",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "神魔小说"
+  ],
+  "tags": [
+    "镜花缘",
+    "海外",
+    "奇想",
+    "才女"
+  ],
+  "wordCount": 700000,
+  "chapterCount": 100,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者李汝珍（约1763—1830）逝世已超过190年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E9%8F%A1%E8%8A%B1%E7%B7%A3",
+  "summary": "《镜花缘》兼具神怪游历、博物杂记与女性才情描写，能把神魔分馆从热闹传奇一路延展到更奇崛的想象世界。",
+  "collectionTier": "shelf",
+  "completionLevel": "L1",
+  "featuredTopics": [
+    "mythic-realms"
+  ]
+}

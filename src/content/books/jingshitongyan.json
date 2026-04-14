@@ -1,0 +1,29 @@
+{
+  "title": "警世通言",
+  "author": "冯梦龙",
+  "authorSlug": "fengmenglong",
+  "dynasty": "明代",
+  "category": [
+    "古典小说",
+    "话本短篇"
+  ],
+  "tags": [
+    "话本",
+    "短篇",
+    "传奇",
+    "冯梦龙"
+  ],
+  "wordCount": 430000,
+  "chapterCount": 40,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者冯梦龙（1574—1646）逝世已超过370年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E8%AD%A6%E4%B8%96%E9%80%9A%E8%A8%80",
+  "summary": "《警世通言》继续以白话短篇写人情冷暖、侠义恩仇与社会风俗，是话本短篇分馆向更丰富题材扩展时最自然的一部。",
+  "collectionTier": "shelf",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "three-yans"
+  ]
+}

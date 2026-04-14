@@ -1,0 +1,31 @@
+{
+  "title": "水浒传",
+  "author": "施耐庵",
+  "authorSlug": "shinaianshi",
+  "dynasty": "元末明初",
+  "category": [
+    "古典小说",
+    "英雄传奇"
+  ],
+  "tags": [
+    "水浒",
+    "梁山",
+    "好汉",
+    "农民起义",
+    "侠义"
+  ],
+  "wordCount": 900000,
+  "chapterCount": 120,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者施耐庵（约1296—约1370）逝世已超过650年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E6%B0%B4%E6%BB%8B%E5%82%91_(120%E5%9B%9E%E6%9C%AC)",
+  "summary": "《水浒传》是中国古典四大名著之一，描写了北宋末年以宋江为首的108位好汉被逼上梁山、聚义起义的故事。全书以丰富的情节、鲜明的人物形象展现了绿林好汉的侠义精神和反抗压迫的斗争意志，深刻反映了封建社会的黑暗与腐败。",
+  "collectionTier": "core",
+  "completionLevel": "L4",
+  "featuredTopics": [
+    "four-masterpieces",
+    "heroic-tales"
+  ]
+}

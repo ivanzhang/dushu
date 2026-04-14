@@ -1,103 +1,548 @@
 ---
 /**
- * ReaderControls：章节阅读器控件（字号、主题）。
- * 纯客户端交互，无 props。
+ * ReaderControls.astro
+ * 章节页阅读器：设置、进度、书签和最近阅读。
  */
+
+interface Props {
+  bookSlug: string;
+  bookTitle: string;
+  chapterSlug: string;
+  chapterTitle: string;
+  chapterNumber: number;
+  totalChapters: number;
+}
+
+const {
+  bookSlug,
+  bookTitle,
+  chapterSlug,
+  chapterTitle,
+  chapterNumber,
+  totalChapters,
+} = Astro.props;
 ---
 
-<div class="reader-controls" role="toolbar" aria-label="阅读设置">
-  <div class="rc-group">
-    <span class="rc-label">字号</span>
-    <button class="rc-btn" id="rc-font-dec" aria-label="减小字号" title="缩小">A-</button>
-    <button class="rc-btn" id="rc-font-inc" aria-label="增大字号" title="放大">A+</button>
+<section
+  class="panel reader-tools"
+  data-reader-controls
+  data-book-slug={bookSlug}
+  data-book-title={bookTitle}
+  data-chapter-slug={chapterSlug}
+  data-chapter-title={chapterTitle}
+  data-chapter-number={chapterNumber}
+  data-total-chapters={totalChapters}
+>
+  <div class="panel-head">
+    <span class="reader-panel-title">阅读设置</span>
+    <span class="reader-panel-sub">自动保存进度、书签与最近阅读</span>
   </div>
-  <div class="rc-group">
-    <span class="rc-label">主题</span>
-    <button class="rc-btn rc-theme" data-theme="default" aria-label="默认主题">白</button>
-    <button class="rc-btn rc-theme" data-theme="sepia" aria-label="护眼主题">黄</button>
-    <button class="rc-btn rc-theme" data-theme="dark" aria-label="夜间主题">夜</button>
+
+  <div class="panel-body">
+    <div class="reader-tools-grid">
+      <section class="reader-tool-card">
+        <h2 class="reader-tool-title">阅读设置</h2>
+
+        <label class="reader-input-group">
+          <span>字体大小</span>
+          <div class="reader-slider-row">
+            <input
+              type="range"
+              min="16"
+              max="28"
+              step="1"
+              value="20"
+              data-setting-font-size
+              aria-label="字体大小"
+            />
+            <strong data-font-size-label>20</strong>
+          </div>
+        </label>
+
+        <label class="reader-input-group">
+          <span>行距</span>
+          <div class="reader-slider-row">
+            <input
+              type="range"
+              min="1.4"
+              max="2.6"
+              step="0.1"
+              value="1.9"
+              data-setting-line-height
+              aria-label="行距"
+            />
+            <strong data-line-height-label>1.9</strong>
+          </div>
+        </label>
+
+        <label class="reader-input-group">
+          <span>版心宽度</span>
+          <div class="reader-slider-row">
+            <input
+              type="range"
+              min="560"
+              max="960"
+              step="20"
+              value="760"
+              data-setting-content-width
+              aria-label="版心宽度"
+            />
+            <strong data-content-width-label>760</strong>
+          </div>
+        </label>
+
+        <div class="reader-input-group">
+          <span>阅读主题</span>
+          <div class="theme-row">
+            <button type="button" class="theme-dot" data-theme="default" aria-label="默认主题"></button>
+            <button type="button" class="theme-dot theme-dot-sepia" data-theme="sepia" aria-label="护眼主题"></button>
+            <button type="button" class="theme-dot theme-dot-dark" data-theme="dark" aria-label="夜间主题"></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="reader-tool-card">
+        <h2 class="reader-tool-title">阅读进度</h2>
+        <div class="progress">
+          <span data-progress-bar></span>
+        </div>
+        <p class="reader-progress-text" data-progress-text>当前章节刚开始，往下读会自动保存进度。</p>
+        <div class="reader-action-row">
+          <button type="button" class="btn btn-secondary btn-sm" data-bookmark-toggle>
+            保存书签
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" data-restore-progress>
+            恢复上次进度
+          </button>
+        </div>
+      </section>
+
+      <section class="reader-tool-card">
+        <h2 class="reader-tool-title">最近阅读</h2>
+        <ul class="reader-link-list" data-history-list>
+          <li class="reader-empty">还没有最近阅读记录。</li>
+        </ul>
+      </section>
+
+      <section class="reader-tool-card">
+        <h2 class="reader-tool-title">本书书签</h2>
+        <ul class="reader-link-list" data-bookmark-list>
+          <li class="reader-empty">还没有书签，读到想回来的地方就记一下。</li>
+        </ul>
+      </section>
+    </div>
   </div>
-</div>
+</section>
 
 <script>
-  const STORAGE_KEY_FONT = 'reader-font-size';
-  const STORAGE_KEY_THEME = 'reader-theme';
-  const CONTENT_SEL = '.chapter-content';
+  import {
+    READER_STORAGE_KEY,
+    buildChapterHref,
+    formatProgressLabel,
+    getBookReadingSnapshot,
+    parseReaderState,
+    patchReaderSettings,
+    recordReadingHistory,
+    serializeReaderState,
+    toggleBookmark,
+    updateReadingProgress,
+  } from '../lib/reader-state';
 
-  function getStoredFont(): number {
-    return parseInt(localStorage.getItem(STORAGE_KEY_FONT) ?? '18', 10);
-  }
+  const root = document.querySelector<HTMLElement>('[data-reader-controls]');
+  const article = document.querySelector<HTMLElement>('.reader-article');
+  const content = document.querySelector<HTMLElement>('.chapter-content');
 
-  function applyFont(size: number) {
-    const el = document.querySelector<HTMLElement>(CONTENT_SEL);
-    if (el) el.style.fontSize = `${size}px`;
-    localStorage.setItem(STORAGE_KEY_FONT, String(size));
-  }
+  if (root && article && content) {
+    const bookSlug = root.dataset.bookSlug ?? '';
+    const bookTitle = root.dataset.bookTitle ?? '';
+    const chapterSlug = root.dataset.chapterSlug ?? '';
+    const chapterTitle = root.dataset.chapterTitle ?? '';
+    const chapterNumber = Number(root.dataset.chapterNumber ?? '1');
+    const totalChapters = Number(root.dataset.totalChapters ?? '1');
 
-  function applyTheme(theme: string) {
-    document.body.classList.remove('reader-theme-sepia', 'reader-theme-dark');
-    if (theme === 'sepia') document.body.classList.add('reader-theme-sepia');
-    if (theme === 'dark') document.body.classList.add('reader-theme-dark');
-    localStorage.setItem(STORAGE_KEY_THEME, theme);
-  }
+    const fontSlider = root.querySelector<HTMLInputElement>('[data-setting-font-size]');
+    const lineHeightSlider = root.querySelector<HTMLInputElement>('[data-setting-line-height]');
+    const contentWidthSlider = root.querySelector<HTMLInputElement>('[data-setting-content-width]');
+    const fontLabel = root.querySelector<HTMLElement>('[data-font-size-label]');
+    const lineHeightLabel = root.querySelector<HTMLElement>('[data-line-height-label]');
+    const contentWidthLabel = root.querySelector<HTMLElement>('[data-content-width-label]');
+    const progressBar = root.querySelector<HTMLElement>('[data-progress-bar]');
+    const progressText = root.querySelector<HTMLElement>('[data-progress-text]');
+    const historyList = root.querySelector<HTMLElement>('[data-history-list]');
+    const bookmarkList = root.querySelector<HTMLElement>('[data-bookmark-list]');
+    const bookmarkButton = root.querySelector<HTMLButtonElement>('[data-bookmark-toggle]');
+    const restoreButton = root.querySelector<HTMLButtonElement>('[data-restore-progress]');
 
-  // 初始化
-  applyFont(getStoredFont());
-  applyTheme(localStorage.getItem(STORAGE_KEY_THEME) ?? 'default');
+    let state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+    let currentProgress = 0;
+    let persistTimer = 0;
 
-  document.getElementById('rc-font-dec')?.addEventListener('click', () => {
-    applyFont(Math.max(14, getStoredFont() - 1));
-  });
+    function saveState() {
+      localStorage.setItem(READER_STORAGE_KEY, serializeReaderState(state));
+    }
 
-  document.getElementById('rc-font-inc')?.addEventListener('click', () => {
-    applyFont(Math.min(28, getStoredFont() + 1));
-  });
+    function applyTheme(theme: string) {
+      document.body.classList.remove('reader-theme-sepia', 'reader-theme-dark');
 
-  document.querySelectorAll<HTMLButtonElement>('.rc-theme').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      applyTheme(btn.dataset.theme ?? 'default');
+      if (theme === 'sepia') {
+        document.body.classList.add('reader-theme-sepia');
+      }
+
+      if (theme === 'dark') {
+        document.body.classList.add('reader-theme-dark');
+      }
+
+      root.querySelectorAll<HTMLButtonElement>('.theme-dot').forEach((button) => {
+        button.classList.toggle('active', button.dataset.theme === theme);
+      });
+    }
+
+    function applySettings() {
+      const { settings } = state;
+
+      content.style.fontSize = `${settings.fontSize}px`;
+      content.style.lineHeight = String(settings.lineHeight);
+      article.style.maxWidth = `${settings.contentWidth}px`;
+
+      if (fontSlider) fontSlider.value = String(settings.fontSize);
+      if (lineHeightSlider) lineHeightSlider.value = String(settings.lineHeight);
+      if (contentWidthSlider) contentWidthSlider.value = String(settings.contentWidth);
+      if (fontLabel) fontLabel.textContent = String(settings.fontSize);
+      if (lineHeightLabel) lineHeightLabel.textContent = settings.lineHeight.toFixed(1);
+      if (contentWidthLabel) contentWidthLabel.textContent = `${settings.contentWidth}`;
+
+      applyTheme(state.settings.theme);
+    }
+
+    function calculateProgress() {
+      const articleTop = article.getBoundingClientRect().top + window.scrollY - 96;
+      const articleEnd = articleTop + article.offsetHeight - window.innerHeight;
+
+      if (articleEnd <= articleTop) {
+        return 1;
+      }
+
+      const ratio = (window.scrollY - articleTop) / (articleEnd - articleTop);
+      return Math.min(1, Math.max(0, Math.round(ratio * 1000) / 1000));
+    }
+
+    function scrollToProgress(progress: number) {
+      const articleTop = article.getBoundingClientRect().top + window.scrollY - 96;
+      const articleEnd = articleTop + article.offsetHeight - window.innerHeight;
+      const targetTop = articleTop + (articleEnd - articleTop) * progress;
+
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: 'smooth',
+      });
+    }
+
+    function renderLinkList(
+      target: HTMLElement | null,
+      items: Array<{
+        chapterSlug: string;
+        chapterTitle: string;
+        chapterNumber: number;
+        progress: number;
+      }>,
+      emptyText: string,
+    ) {
+      if (!target) {
+        return;
+      }
+
+      target.replaceChildren();
+
+      if (items.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'reader-empty';
+        empty.textContent = emptyText;
+        target.append(empty);
+        return;
+      }
+
+      items.slice(0, 5).forEach((item) => {
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
+        const meta = document.createElement('span');
+
+        link.className = 'reader-link-item';
+        link.href = buildChapterHref(bookSlug, item.chapterSlug);
+        link.textContent = `第 ${item.chapterNumber} 章 · ${item.chapterTitle}`;
+
+        meta.className = 'reader-link-meta';
+        meta.textContent = formatProgressLabel(item.progress);
+
+        listItem.append(link, meta);
+        target.append(listItem);
+      });
+    }
+
+    function renderPanels() {
+      const snapshot = getBookReadingSnapshot(state, bookSlug);
+      const currentBookmark = snapshot.bookmarks.find((item) => item.chapterSlug === chapterSlug);
+      const currentSavedProgress = snapshot.progress?.chapterSlug === chapterSlug
+        ? snapshot.progress.progress
+        : 0;
+
+      if (progressBar) {
+        progressBar.style.width = formatProgressLabel(currentProgress);
+      }
+
+      if (progressText) {
+        progressText.textContent = `已读 ${formatProgressLabel(currentProgress)} · 第 ${chapterNumber} 章 / 共 ${totalChapters} 章`;
+      }
+
+      if (bookmarkButton) {
+        bookmarkButton.textContent = currentBookmark ? '移除书签' : '保存书签';
+      }
+
+      if (restoreButton) {
+        restoreButton.disabled = currentSavedProgress < 0.03;
+      }
+
+      renderLinkList(historyList, snapshot.history, '还没有最近阅读记录。');
+      renderLinkList(bookmarkList, snapshot.bookmarks, '还没有书签，读到想回来的地方就记一下。');
+    }
+
+    function persistCurrentProgress(force = false) {
+      const nextProgress = calculateProgress();
+
+      if (!force && Math.abs(nextProgress - currentProgress) < 0.02) {
+        return;
+      }
+
+      currentProgress = nextProgress;
+
+      const now = Date.now();
+      state = updateReadingProgress(state, {
+        bookSlug,
+        bookTitle,
+        chapterSlug,
+        chapterTitle,
+        chapterNumber,
+        progress: currentProgress,
+        updatedAt: now,
+      });
+      state = recordReadingHistory(state, {
+        bookSlug,
+        bookTitle,
+        chapterSlug,
+        chapterTitle,
+        chapterNumber,
+        progress: currentProgress,
+        visitedAt: now,
+      });
+      saveState();
+      renderPanels();
+    }
+
+    function schedulePersist() {
+      window.clearTimeout(persistTimer);
+      persistTimer = window.setTimeout(() => {
+        persistCurrentProgress();
+      }, 180);
+    }
+
+    function updateSettings(
+      partial: Partial<{
+        fontSize: number;
+        lineHeight: number;
+        contentWidth: number;
+        theme: string;
+      }>,
+    ) {
+      state = patchReaderSettings(state, partial);
+      saveState();
+      applySettings();
+    }
+
+    fontSlider?.addEventListener('input', () => {
+      updateSettings({ fontSize: Number(fontSlider.value) });
     });
-  });
+
+    lineHeightSlider?.addEventListener('input', () => {
+      updateSettings({ lineHeight: Number(lineHeightSlider.value) });
+    });
+
+    contentWidthSlider?.addEventListener('input', () => {
+      updateSettings({ contentWidth: Number(contentWidthSlider.value) });
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('.theme-dot').forEach((button) => {
+      button.addEventListener('click', () => {
+        updateSettings({ theme: button.dataset.theme ?? 'default' });
+      });
+    });
+
+    bookmarkButton?.addEventListener('click', () => {
+      const result = toggleBookmark(state, {
+        bookSlug,
+        bookTitle,
+        chapterSlug,
+        chapterTitle,
+        chapterNumber,
+        progress: currentProgress,
+        createdAt: Date.now(),
+      });
+
+      state = result.state;
+      saveState();
+      renderPanels();
+    });
+
+    restoreButton?.addEventListener('click', () => {
+      const snapshot = getBookReadingSnapshot(state, bookSlug);
+      const savedProgress = snapshot.progress?.chapterSlug === chapterSlug
+        ? snapshot.progress.progress
+        : 0;
+
+      if (savedProgress > 0.03) {
+        scrollToProgress(savedProgress);
+      }
+    });
+
+    applySettings();
+    currentProgress = state.progress[bookSlug]?.chapterSlug === chapterSlug
+      ? state.progress[bookSlug].progress
+      : calculateProgress();
+    persistCurrentProgress(true);
+    renderPanels();
+
+    window.addEventListener('scroll', schedulePersist, { passive: true });
+    window.addEventListener('beforeunload', () => persistCurrentProgress(true));
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        persistCurrentProgress(true);
+      }
+    });
+  }
 </script>
 
 <style>
-  .reader-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+  .reader-tools {
     margin-bottom: 1.5rem;
   }
 
-  .rc-group {
-    display: flex;
+  .reader-panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink-900);
+  }
+
+  .reader-panel-sub {
+    font-size: 0.82rem;
+    color: var(--ink-500);
+  }
+
+  .reader-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .reader-tool-card {
+    border: var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .reader-tool-title {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+  }
+
+  .reader-input-group {
+    display: grid;
+    gap: 0.45rem;
+    margin-bottom: 0.85rem;
+    color: var(--ink-500);
+    font-size: 0.88rem;
+  }
+
+  .reader-slider-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
     align-items: center;
-    gap: 0.4rem;
   }
 
-  .rc-label {
-    font-size: 0.8rem;
-    color: var(--color-text-muted);
-    margin-right: 0.2rem;
+  .reader-slider-row input[type='range'] {
+    width: 100%;
+    accent-color: var(--accent-500);
   }
 
-  .rc-btn {
-    padding: 0.25em 0.7em;
-    background: var(--color-tag-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    font-size: 0.85rem;
-    cursor: pointer;
-    color: var(--color-text);
-    transition: background 0.15s;
+  .reader-progress-text {
+    margin: 0.75rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.88rem;
+    line-height: 1.7;
   }
 
-  .rc-btn:hover {
-    background: var(--color-primary);
-    color: #fff;
-    border-color: var(--color-primary);
+  .reader-action-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+  }
+
+  .reader-link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .reader-link-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  .reader-link-item {
+    color: var(--ink-700);
+    line-height: 1.6;
+  }
+
+  .reader-link-item:hover {
+    color: var(--accent-500);
+  }
+
+  .reader-link-meta {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    color: var(--ink-300);
+  }
+
+  .reader-empty {
+    color: var(--ink-500);
+    line-height: 1.7;
+  }
+
+  .theme-dot {
+    background: #ffffff;
+  }
+
+  .theme-dot-sepia {
+    background: #f4ead5;
+  }
+
+  .theme-dot-dark {
+    background: #1a1612;
+  }
+
+  @media (max-width: 1100px) {
+    .reader-tools-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .reader-tools-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

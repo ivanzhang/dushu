@@ -1,184 +1,225 @@
 ---
 import { getCollection } from 'astro:content';
+import CuratedShelf from '../components/CuratedShelf.astro';
+import FeatureCallout from '../components/FeatureCallout.astro';
+import {
+  homeEntryGuideSteps,
+  homeInterestEntries,
+  homeLibraryMap,
+} from '../data/library/entry-guides';
 import Base from '../layouts/Base.astro';
-import BookCard from '../components/BookCard.astro';
+import {
+  buildBookDisplayMaps,
+  pickBooksByCategory,
+  pickPlannedBooks,
+  sortBooksByPlan,
+} from '../lib/library';
 
 const books = await getCollection('books');
+const sortedBooks = sortBooksByPlan(books);
+
+// 首页先只展示已经落库的书，避免出现空链接。
+const curatorPicks = pickPlannedBooks(sortedBooks, ['hongloumeng', 'sanguoyanyi']);
+const mustReadBooks = pickPlannedBooks(sortedBooks, [
+  'hongloumeng',
+  'sanguoyanyi',
+  'xiyouji',
+  'shuihuzhuan',
+]);
+const historyBooks = pickBooksByCategory(sortedBooks, 'historical-romance');
+const strangeBooks = pickBooksByCategory(sortedBooks, 'strange-tales');
+const worldlyBooks = pickBooksByCategory(sortedBooks, 'worldly-novels');
+const proseBooks = pickBooksByCategory(sortedBooks, 'classical-prose');
+const recentBooks = [...sortedBooks].reverse().slice(0, 3);
+const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(sortedBooks);
 
 // 统计数据
 const totalBooks = books.length;
 const totalChapters = books.reduce((sum, b) => sum + b.data.chapterCount, 0);
 const totalWords = books.reduce((sum, b) => sum + b.data.wordCount, 0);
 const totalWordsWan = Math.round(totalWords / 10000);
-
-// 提取所有唯一分类
-const allCategories = [...new Set(books.flatMap((b) => b.data.category))];
 ---
 
 <Base
   title="墨潮读书"
   description="墨潮读书——阅读经典，品味千年文脉。收录中国古典文学公版书籍，免费在线阅读。"
 >
-  <!-- 英雄区域 -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-inner">
-        <h1 class="hero-title">阅读经典，品味千年文脉</h1>
+  <section class="library-hero">
+    <div class="container library-hero-grid">
+      <div class="library-hero-copy">
+        <p class="hero-kicker">古典综合馆</p>
+        <h1 class="hero-title">一间可以逛起来的免费小型读书馆</h1>
         <p class="hero-desc">
-          墨潮读书收录中国古典文学公版名著，免费在线阅读。
-          无广告、无付费墙，让每一位读者都能畅游文学瑰宝。
+          墨潮读书正在从几本 demo 书，扩成一个有馆藏结构、有分馆入口、也能顺着专题一路读下去的小型古典书馆。
         </p>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-num">{totalBooks}</span>
-            <span class="hero-stat-label">部经典著作</span>
+
+        <div class="library-stat-grid">
+          <div class="stat">
+            <strong>{totalBooks}</strong>
+            <span>已收录书籍</span>
           </div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">{totalChapters}</span>
-            <span class="hero-stat-label">章节</span>
+          <div class="stat">
+            <strong>{totalChapters}</strong>
+            <span>现有章节</span>
           </div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">{totalWordsWan}万</span>
-            <span class="hero-stat-label">总字数</span>
+          <div class="stat">
+            <strong>{totalWordsWan}万</strong>
+            <span>当前字数</span>
           </div>
         </div>
-        <a href="#books" class="btn-hero">立即阅读</a>
+
+        <div class="hero-actions">
+          <a href="#must-read" class="btn btn-primary">先逛名著必读</a>
+          <a href="/search" class="btn btn-secondary">直接搜书</a>
+        </div>
       </div>
+
+      <FeatureCallout
+        eyebrow="馆长推荐"
+        title="先从镇馆书读起"
+        description="这一轮先把核心名著做深，保证新读者第一次进站就能看见能读、能逛、能继续追下去的馆藏。"
+        href={curatorPicks[0] ? `/book/${curatorPicks[0].id}` : '/search'}
+        ctaLabel={curatorPicks[0] ? `先看《${curatorPicks[0].data.title}》` : '去搜索'}
+        meta="本轮优先：核心 5 本做到 L3，重点 5 本做到 L2"
+      />
     </div>
   </section>
 
-  <!-- 分类入口 -->
-  <section class="categories-section">
+  <section class="section">
     <div class="container">
-      <h2 class="section-title">浏览分类</h2>
-      <div class="category-chips">
-        {allCategories.map((cat) => {
-          const slug = cat
-            .replace(/[\s　]/g, '-')
-            .replace(/[^\w\u4e00-\u9fff-]/g, '');
-          return (
-            <a href={`/category/${slug}`} class="tag category-chip">
-              {cat}
-            </a>
-          );
-        })}
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">怎么逛这座小馆</h2>
+          <p class="section-sub">第一次来不用急着搜，先按最适合自己的进入方式选一个入口。</p>
+        </div>
       </div>
-    </div>
-  </section>
 
-  <!-- 推荐书籍 -->
-  <section class="books-section" id="books">
-    <div class="container">
-      <h2 class="section-title">全部书籍</h2>
-      <div class="book-grid">
-        {books.map((book) => (
-          <BookCard
-            slug={book.id}
-            title={book.data.title}
-            author={book.data.author}
-            category={book.data.category}
-            tags={book.data.tags}
-            status={book.data.status}
-            wordCount={book.data.wordCount}
-            summary={book.data.summary}
-          />
+      <div class="hall-card-grid">
+        {homeEntryGuideSteps.map((guide) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{guide.title}</h3>
+            <p class="hall-card-desc">{guide.description}</p>
+            {guide.meta && <p class="guide-card-meta">{guide.meta}</p>}
+            <a href={guide.href} class="btn btn-secondary guide-card-link">{guide.ctaLabel}</a>
+          </article>
         ))}
       </div>
     </div>
   </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">按兴趣进入</h2>
+          <p class="section-sub">如果你更确定自己喜欢什么，就直接按题材和读法挑入口。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {homeInterestEntries.map((entry) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{entry.title}</h3>
+            <p class="hall-card-desc">{entry.description}</p>
+            {entry.meta && <p class="guide-card-meta">{entry.meta}</p>}
+            <a href={entry.href} class="btn btn-secondary guide-card-link">{entry.ctaLabel}</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">馆藏地图</h2>
+          <p class="section-sub">本站现在有四种主要入口：镇馆、分馆、专题和作者展架。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {homeLibraryMap.map((entry) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{entry.title}</h3>
+            <p class="hall-card-desc">{entry.description}</p>
+            {entry.meta && <p class="guide-card-meta">{entry.meta}</p>}
+            <a href={entry.href} class="btn btn-secondary guide-card-link">{entry.ctaLabel}</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <CuratedShelf
+    title="馆长推荐"
+    description="优先展示已经具备阅读深度的镇馆入口。"
+    books={curatorPicks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="馆长推荐书架正在整理中。"
+  />
+
+  <div id="must-read">
+    <CuratedShelf
+      title="名著必读"
+      description="先把最能代表本站气质的经典摆出来。"
+      books={mustReadBooks}
+      showCompletion={true}
+      tierLabelMap={tierLabelMap}
+      completionLevelMap={completionLevelMap}
+      emptyText="名著必读书架正在补书。"
+    />
+  </div>
+
+  <CuratedShelf
+    title="历史演义"
+    description="从大战略与人物群像切入，适合一口气读下去。"
+    books={historyBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="历史演义分馆正在继续补书。"
+  />
+
+  <CuratedShelf
+    title="志怪传奇"
+    description="短篇、奇闻、夜读感，是后续专题页最有策展感的一组。"
+    books={strangeBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="志怪传奇书架正在补齐《聊斋志异》等重点馆藏。"
+  />
+
+  <CuratedShelf
+    title="世情小说"
+    description="家族、士林与市井人情，是本站最厚的一条阅读线。"
+    books={worldlyBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="世情小说书架会随着《金瓶梅》《儒林外史》一起扩进来。"
+  />
+
+  <CuratedShelf
+    title="古文入门"
+    description="留一个非小说入口，让网站更像馆，不只像小说列表。"
+    books={proseBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="古文入门区将由《古文观止》率先补齐。"
+  />
+
+  <CuratedShelf
+    title="最近入藏"
+    description="先看最近补进馆里的书，方便回访读者快速逛新内容。"
+    books={recentBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    emptyText="最近入藏书架正在更新。"
+  />
 </Base>
-
-<style>
-  /* 英雄区 */
-  .hero {
-    background: linear-gradient(135deg, #5c2e0e 0%, #8b4513 60%, #a0522d 100%);
-    color: #fff;
-    padding: 4rem 0 3.5rem;
-    margin-bottom: 2.5rem;
-  }
-
-  .hero-inner {
-    max-width: 640px;
-  }
-
-  .hero-title {
-    font-family: var(--font-serif);
-    font-size: clamp(1.8rem, 4vw, 2.6rem);
-    font-weight: 700;
-    line-height: 1.25;
-    margin-bottom: 1rem;
-    letter-spacing: 0.02em;
-  }
-
-  .hero-desc {
-    font-size: 1.05rem;
-    opacity: 0.9;
-    line-height: 1.7;
-    margin-bottom: 1.75rem;
-    max-width: 520px;
-  }
-
-  .hero-stats {
-    display: flex;
-    gap: 2.5rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .hero-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero-stat-num {
-    font-size: 1.9rem;
-    font-weight: 700;
-    font-family: var(--font-serif);
-    line-height: 1;
-  }
-
-  .hero-stat-label {
-    font-size: 0.82rem;
-    opacity: 0.8;
-    margin-top: 0.2rem;
-  }
-
-  .btn-hero {
-    display: inline-block;
-    padding: 0.7em 2em;
-    background: #fff;
-    color: var(--color-primary);
-    border-radius: var(--radius);
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: opacity 0.2s;
-  }
-
-  .btn-hero:hover {
-    opacity: 0.9;
-    text-decoration: none;
-  }
-
-  /* 分类入口 */
-  .categories-section {
-    margin-bottom: 2.5rem;
-  }
-
-  .category-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .category-chip {
-    font-size: 0.9rem;
-    padding: 0.3em 1em;
-  }
-
-  /* 书籍区 */
-  .books-section {
-    margin-bottom: 2rem;
-  }
-</style>

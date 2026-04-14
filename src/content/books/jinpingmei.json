@@ -1,0 +1,30 @@
+{
+  "title": "金瓶梅",
+  "author": "兰陵笑笑生",
+  "authorSlug": "lanlingxiaoxiaosheng",
+  "dynasty": "明代",
+  "category": [
+    "古典小说",
+    "世情小说"
+  ],
+  "tags": [
+    "金瓶梅",
+    "西门庆",
+    "潘金莲",
+    "市井生活",
+    "人情世故"
+  ],
+  "wordCount": 800000,
+  "chapterCount": 100,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，作者兰陵笑笑生为明代中后期人士，真实身份不详，作品约成于万历年间（1573-1620）。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E9%87%91%E7%93%B2%E6%A2%85",
+  "summary": "《金瓶梅》是中国第一部文人独立创作的长篇世情小说，借《水浒传》中西门庆与潘金莲的故事为引子，描写了西门庆一家的兴衰历史，全景式展现了明代中后期市井社会的日常生活、商人生活与官场腐败，是中国古典小说从英雄传奇向世情小说转变的标志性作品。",
+  "collectionTier": "core",
+  "completionLevel": "L4",
+  "featuredTopics": [
+    "worldly-novels"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "title": "阅微草堂笔记",
+  "author": "纪昀",
+  "authorSlug": "jiyun",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "志怪笔记"
+  ],
+  "tags": [
+    "笔记",
+    "志怪",
+    "清代",
+    "异闻"
+  ],
+  "wordCount": 260000,
+  "chapterCount": 24,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者纪昀（1724—1805）逝世已超过220年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E9%96%B1%E5%BE%AE%E8%8D%89%E5%A0%82%E7%AD%86%E8%A8%98",
+  "summary": "《阅微草堂笔记》汇集纪昀记录的狐鬼神怪、士林逸闻与社会见闻，篇幅短小、口气平实，适合作为志怪笔记分馆的入门作品，也适合站内做碎片化夜读入口。",
+  "collectionTier": "shelf",
+  "completionLevel": "L3",
+  "featuredTopics": [
+    "strange-tales"
+  ]
+}

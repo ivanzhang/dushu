@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const currentSections = [
+  '馆长推荐与名著必读首页入口',
+  '分类总览与分馆页',
+  '作者展架页',
+  '版权说明与来源说明',
+];
+---
+
+<Base
+  title="关于墨潮读书"
+  description="了解墨潮读书的站点定位、当前建设方向和版权处理原则。"
+>
+  <div class="container">
+    <section class="hall-hero">
+      <p class="hero-kicker">关于</p>
+      <h1 class="page-title">关于墨潮读书</h1>
+      <p class="page-subtitle">
+        这是一个正在扩馆中的免费古典读书馆站点，目标是把公版经典做成可以慢慢逛、也能顺手读下去的阅读入口。
+      </p>
+    </section>
+
+    <section class="hall-card-grid">
+      <article class="hall-card">
+        <h2 class="hall-card-title">我们在做什么</h2>
+        <p class="hall-card-desc">
+          用静态站方式整理中国古典文学公版书，把首页、分类、作者、专题和阅读页串成一个小型读书馆。
+        </p>
+      </article>
+
+      <article class="hall-card">
+        <h2 class="hall-card-title">现在做到哪</h2>
+        <ul class="reading-order-list">
+          {currentSections.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </article>
+
+      <article class="hall-card">
+        <h2 class="hall-card-title">版权与来源</h2>
+        <p class="hall-card-desc">
+          当前只收录公有领域或具备明确开放授权的内容，具体来源与版权说明请查看版权页。
+        </p>
+        <a href="/about/copyright" class="btn btn-secondary">查看版权说明</a>
+      </article>
+    </section>
+  </div>
+</Base>

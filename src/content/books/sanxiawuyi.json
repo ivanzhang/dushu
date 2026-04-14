@@ -1,0 +1,29 @@
+{
+  "title": "三侠五义",
+  "author": "石玉昆",
+  "authorSlug": "shiyukun",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "公案侠义"
+  ],
+  "tags": [
+    "包公",
+    "展昭",
+    "公案",
+    "侠义"
+  ],
+  "wordCount": 600000,
+  "chapterCount": 120,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者石玉昆为清代说书人，逝世已超过120年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E4%B8%89%E4%BF%A0%E4%BA%94%E7%BE%A9",
+  "summary": "《三侠五义》把包公公案与江湖侠义并写，是公案侠义分馆最适合打头的一部作品，也能让书馆的题材层次更完整。",
+  "collectionTier": "shelf",
+  "completionLevel": "L3",
+  "featuredTopics": [
+    "gong-an-heroics"
+  ]
+}

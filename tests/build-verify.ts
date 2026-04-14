@@ -50,8 +50,35 @@ for (const slug of bookPages) {
     const content = readFileSync(file, 'utf-8');
     check(content.includes('"@type":"Book"') || content.includes('"@type": "Book"'),
       `/book/${slug}.html 缺少 Book JSON-LD`);
+    check(content.includes('收录进度'), `/book/${slug}.html 缺少 收录进度`);
+    check(content.includes('完成度'), `/book/${slug}.html 缺少 完成度`);
   } else {
     errors.push(`/book/${slug}.html 不存在`);
+  }
+}
+
+// 书籍页需要具备继续阅读、书签摘要和 EPUB 下载入口
+const readerBookHtml = readFileSync(join(DIST, 'book', 'hongloumeng.html'), 'utf-8');
+check(readerBookHtml.includes('继续阅读'), '/book/hongloumeng.html 缺少 继续阅读 入口');
+check(readerBookHtml.includes('最近阅读'), '/book/hongloumeng.html 缺少 最近阅读 模块');
+check(readerBookHtml.includes('我的书签'), '/book/hongloumeng.html 缺少 我的书签 模块');
+check(readerBookHtml.includes('下载 EPUB'), '/book/hongloumeng.html 缺少 下载 EPUB 入口');
+
+// 章节页需要具备阅读设置、书签和历史入口
+const readerChapterHtml = readFileSync(join(DIST, 'book', 'hongloumeng', '001.html'), 'utf-8');
+check(readerChapterHtml.includes('阅读设置'), '/book/hongloumeng/001.html 缺少 阅读设置');
+check(readerChapterHtml.includes('阅读进度'), '/book/hongloumeng/001.html 缺少 阅读进度 模块');
+check(readerChapterHtml.includes('保存书签'), '/book/hongloumeng/001.html 缺少 保存书签 按钮');
+check(readerChapterHtml.includes('最近阅读'), '/book/hongloumeng/001.html 缺少 最近阅读 模块');
+check(readerChapterHtml.includes('恢复上次进度'), '/book/hongloumeng/001.html 缺少 恢复上次进度 按钮');
+
+// 构建产物里应包含可下载的 EPUB 文件
+const epubFiles = ['hongloumeng', 'sanguoyanyi', 'xiyouji', 'sanxiawuyi', 'shuoyuequanzhuan'];
+for (const slug of epubFiles) {
+  const epubFile = join(DIST, 'epub', `${slug}.epub`);
+  check(existsSync(epubFile), `缺少 EPUB 文件: /epub/${slug}.epub`);
+  if (existsSync(epubFile)) {
+    check(statSync(epubFile).size > 1024, `/epub/${slug}.epub 体积异常，可能生成失败`);
   }
 }
 
@@ -59,11 +86,112 @@ for (const slug of bookPages) {
 const requiredPages = [
   'index.html',
   '404.html',
+  'about.html',
+  'category.html',
   'search.html',
   'about/copyright.html',
 ];
 for (const page of requiredPages) {
   check(existsSync(join(DIST, page)), `缺少页面: ${page}`);
+}
+
+// 首页需要具备读书馆入口模块
+const indexHtml = readFileSync(join(DIST, 'index.html'), 'utf-8');
+check(indexHtml.includes('馆长推荐'), '首页缺少 馆长推荐 模块');
+check(indexHtml.includes('名著必读'), '首页缺少 名著必读 模块');
+check(indexHtml.includes('最近入藏'), '首页缺少 最近入藏 模块');
+check(indexHtml.includes('怎么逛这座小馆'), '首页缺少 怎么逛这座小馆');
+check(indexHtml.includes('按兴趣进入'), '首页缺少 按兴趣进入');
+check(indexHtml.includes('馆藏地图'), '首页缺少 馆藏地图');
+
+// 分类页需要升级成分馆页
+const categoryIndexHtml = readFileSync(join(DIST, 'category.html'), 'utf-8');
+check(categoryIndexHtml.includes('分馆浏览'), '分类总览页缺少 分馆浏览 标题');
+check(categoryIndexHtml.includes('怎么选馆'), '分类总览页缺少 怎么选馆');
+check(categoryIndexHtml.includes('推荐逛法'), '分类总览页缺少 推荐逛法');
+check(categoryIndexHtml.includes('适合谁'), '分类总览页缺少 适合谁');
+
+const worldlyHallHtml = readFileSync(join(DIST, 'category', '世情小说.html'), 'utf-8');
+check(worldlyHallHtml.includes('分类简介'), '分类页缺少 分类简介');
+check(worldlyHallHtml.includes('代表作品'), '分类页缺少 代表作品');
+check(worldlyHallHtml.includes('阅读建议'), '分类页缺少 阅读建议');
+check(worldlyHallHtml.includes('适合谁读'), '分类页缺少 适合谁读');
+check(worldlyHallHtml.includes('入馆路线'), '分类页缺少 入馆路线');
+check(worldlyHallHtml.includes('邻馆串逛'), '分类页缺少 邻馆串逛');
+
+// 作者页需要升级成作者展架页
+const authorHtml = readFileSync(join(DIST, 'author', 'caoxueqin.html'), 'utf-8');
+check(authorHtml.includes('作者简介'), '作者页缺少 作者简介');
+check(authorHtml.includes('推荐阅读顺序'), '作者页缺少 推荐阅读顺序');
+check(authorHtml.includes('馆内定位'), '作者页缺少 馆内定位');
+check(authorHtml.includes('气质标签'), '作者页缺少 气质标签');
+check(authorHtml.includes('从哪本开始'), '作者页缺少 从哪本开始');
+check(authorHtml.includes('顺手再逛'), '作者页缺少 顺手再逛');
+
+const fengmenglongHtml = readFileSync(join(DIST, 'author', 'fengmenglong.html'), 'utf-8');
+check(!fengmenglongHtml.includes('正在整理中'), '冯梦龙作者页仍在使用兜底文案');
+
+// 专题页与关于页需要存在
+check(existsSync(join(DIST, 'topic', 'four-masterpieces.html')), '缺少专题页: 四大名著');
+check(existsSync(join(DIST, 'topic', 'strange-tales.html')), '缺少专题页: 志怪传奇');
+
+const topicHtml = readFileSync(join(DIST, 'topic', 'four-masterpieces.html'), 'utf-8');
+check(topicHtml.includes('策展缘起'), '专题页缺少 策展缘起');
+check(topicHtml.includes('阅读路线'), '专题页缺少 阅读路线');
+check(topicHtml.includes('相关分馆'), '专题页缺少 相关分馆');
+check(existsSync(join(DIST, 'topic', 'three-yans.html')), '缺少专题页: 三言话本');
+
+if (existsSync(join(DIST, 'topic', 'three-yans.html'))) {
+  const threeYansHtml = readFileSync(join(DIST, 'topic', 'three-yans.html'), 'utf-8');
+  check(threeYansHtml.includes('相关专题'), '三言专题页缺少 相关专题');
+  check(threeYansHtml.includes('作者入口'), '三言专题页缺少 作者入口');
+}
+
+const searchHtml = readFileSync(join(DIST, 'search.html'), 'utf-8');
+check(searchHtml.includes('分馆浏览') || searchHtml.includes('专题'), '搜索页缺少馆藏导览提示');
+check(searchHtml.includes('如果你不知道搜什么'), '搜索页缺少 如果你不知道搜什么');
+check(searchHtml.includes('按读法找书'), '搜索页缺少 按读法找书');
+check(searchHtml.includes('热门搜词'), '搜索页缺少 热门搜词');
+check(searchHtml.includes('从作者进入'), '搜索页缺少 从作者进入');
+check(searchHtml.includes('从专题进入'), '搜索页缺少 从专题进入');
+check(searchHtml.includes('历史风云'), '搜索页缺少 历史风云');
+check(searchHtml.includes('神魔奇想'), '搜索页缺少 神魔奇想');
+check(searchHtml.includes('罗贯中'), '搜索页缺少 罗贯中');
+check(searchHtml.includes('吴承恩'), '搜索页缺少 吴承恩');
+check(searchHtml.includes('许仲琳'), '搜索页缺少 许仲琳');
+check(searchHtml.includes('公案侠义'), '搜索页缺少 公案侠义');
+check(searchHtml.includes('英雄传奇'), '搜索页缺少 英雄传奇');
+check(searchHtml.includes('石玉昆'), '搜索页缺少 石玉昆');
+check(searchHtml.includes('施耐庵'), '搜索页缺少 施耐庵');
+check(searchHtml.includes('钱彩'), '搜索页缺少 钱彩');
+
+check(existsSync(join(DIST, 'topic', 'historical-epics.html')), '缺少专题页: 历史风云');
+check(existsSync(join(DIST, 'topic', 'mythic-realms.html')), '缺少专题页: 神魔奇想');
+check(existsSync(join(DIST, 'topic', 'gong-an-heroics.html')), '缺少专题页: 公案侠义');
+check(existsSync(join(DIST, 'topic', 'heroic-tales.html')), '缺少专题页: 英雄传奇');
+
+if (existsSync(join(DIST, 'topic', 'historical-epics.html'))) {
+  const historicalHtml = readFileSync(join(DIST, 'topic', 'historical-epics.html'), 'utf-8');
+  check(historicalHtml.includes('相关专题'), '历史风云专题页缺少 相关专题');
+  check(historicalHtml.includes('作者入口'), '历史风云专题页缺少 作者入口');
+}
+
+if (existsSync(join(DIST, 'topic', 'mythic-realms.html'))) {
+  const mythicHtml = readFileSync(join(DIST, 'topic', 'mythic-realms.html'), 'utf-8');
+  check(mythicHtml.includes('相关专题'), '神魔奇想专题页缺少 相关专题');
+  check(mythicHtml.includes('作者入口'), '神魔奇想专题页缺少 作者入口');
+}
+
+if (existsSync(join(DIST, 'topic', 'gong-an-heroics.html'))) {
+  const gongAnHtml = readFileSync(join(DIST, 'topic', 'gong-an-heroics.html'), 'utf-8');
+  check(gongAnHtml.includes('相关专题'), '公案侠义专题页缺少 相关专题');
+  check(gongAnHtml.includes('作者入口'), '公案侠义专题页缺少 作者入口');
+}
+
+if (existsSync(join(DIST, 'topic', 'heroic-tales.html'))) {
+  const heroicHtml = readFileSync(join(DIST, 'topic', 'heroic-tales.html'), 'utf-8');
+  check(heroicHtml.includes('相关专题'), '英雄传奇专题页缺少 相关专题');
+  check(heroicHtml.includes('作者入口'), '英雄传奇专题页缺少 作者入口');
 }
 
 // Pagefind 索引存在

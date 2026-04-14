@@ -1,0 +1,29 @@
+{
+  "title": "东周列国志",
+  "author": "冯梦龙",
+  "authorSlug": "fengmenglong",
+  "dynasty": "明代",
+  "category": [
+    "古典小说",
+    "历史演义"
+  ],
+  "tags": [
+    "列国",
+    "春秋",
+    "战国",
+    "历史"
+  ],
+  "wordCount": 1100000,
+  "chapterCount": 108,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，通常署冯梦龙编订，相关作者均已逝世超过300年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E6%9D%B1%E5%91%A8%E5%88%97%E5%9C%8B%E5%BF%97",
+  "summary": "《东周列国志》以春秋战国数百年历史为骨架，囊括合纵连横、诸侯争霸与名臣名将故事，是历史演义分馆向更长历史线扩展时最合适的一部大部头。",
+  "collectionTier": "featured",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "historical-epics"
+  ]
+}

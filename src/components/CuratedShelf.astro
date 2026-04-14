@@ -1,0 +1,76 @@
+---
+/**
+ * CuratedShelf.astro
+ * 统一渲染首页/专题页/分馆页的策展书架。
+ *
+ * 使用示例：
+ * <CuratedShelf title="名著必读" books={books} showCompletion={true} />
+ */
+
+import BookCard from './BookCard.astro';
+
+interface ShelfBook {
+  id: string;
+  data: {
+    title: string;
+    author: string;
+    category: string[];
+    tags: string[];
+    status: string;
+    wordCount: number;
+    summary: string;
+  };
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  books: ShelfBook[];
+  showCompletion?: boolean;
+  emptyText?: string;
+  tierLabelMap?: Record<string, string>;
+  completionLevelMap?: Record<string, 'L1' | 'L2' | 'L3' | 'L4'>;
+}
+
+const {
+  title,
+  description,
+  books,
+  showCompletion = false,
+  emptyText = '该书架正在补充中。',
+  tierLabelMap = {},
+  completionLevelMap = {},
+} = Astro.props;
+---
+
+<section class="section library-shelf">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">{title}</h2>
+        {description && <p class="section-sub">{description}</p>}
+      </div>
+    </div>
+
+    {books.length > 0 ? (
+      <div class="book-grid">
+        {books.map((book) => (
+          <BookCard
+            slug={book.id}
+            title={book.data.title}
+            author={book.data.author}
+            category={book.data.category}
+            tags={book.data.tags}
+            status={book.data.status}
+            wordCount={book.data.wordCount}
+            summary={book.data.summary}
+            tierLabel={tierLabelMap[book.id]}
+            completionLevel={showCompletion ? completionLevelMap[book.id] : undefined}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="notice">{emptyText}</p>
+    )}
+  </div>
+</section>

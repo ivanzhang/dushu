@@ -1,0 +1,30 @@
+{
+  "title": "说岳全传",
+  "author": "钱彩",
+  "authorSlug": "qiancai",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "历史演义"
+  ],
+  "tags": [
+    "岳飞",
+    "南宋",
+    "忠义",
+    "演义"
+  ],
+  "wordCount": 650000,
+  "chapterCount": 80,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者钱彩为清代人，逝世已超过200年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E8%AA%AA%E5%B2%B3%E5%85%A8%E5%82%B3",
+  "summary": "《说岳全传》以岳飞抗金故事为中心，兼具忠义叙事与民间英雄色彩，适合作为历史演义区里更容易被读者认出的铺面书。",
+  "collectionTier": "shelf",
+  "completionLevel": "L3",
+  "featuredTopics": [
+    "historical-epics",
+    "heroic-tales"
+  ]
+}

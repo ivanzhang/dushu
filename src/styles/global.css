@@ -5,6 +5,10 @@
 
 /* ---------- 设计令牌 ---------- */
 :root {
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "STSong", "Songti SC", serif;
+  --color-primary: var(--accent-500);
+  --color-primary-soft: #f2d8c8;
+
   /* 墨色系 */
   --ink-900: #18130f;
   --ink-700: #2a201a;
@@ -61,7 +65,7 @@ body {
     radial-gradient(circle at 85% 10%, rgba(204, 92, 47, 0.12), transparent 45%),
     linear-gradient(180deg, #fffdf9 0%, var(--paper-100) 55%, #efe4d1 100%);
   color: var(--ink-900);
-  font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", "Songti SC", serif;
+  font-family: var(--font-serif);
   line-height: 1.6;
 }
 
@@ -269,6 +273,241 @@ img {
   font-size: 15px;
 }
 
+/* ---------- 首页入口页 ---------- */
+.library-hero {
+  padding: 40px 0 20px;
+}
+
+.library-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.library-hero-copy {
+  border: var(--border);
+  border-radius: 28px;
+  padding: 32px;
+  background:
+    linear-gradient(135deg, rgba(24, 19, 15, 0.92), rgba(95, 80, 68, 0.88)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  color: #fff7ef;
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-kicker {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 247, 239, 0.72);
+}
+
+.library-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.feature-callout {
+  border: 1px solid rgba(180, 138, 38, 0.24);
+  border-radius: 28px;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(180, 138, 38, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 240, 226, 0.96));
+  box-shadow: var(--shadow-md);
+}
+
+.feature-eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--accent-600);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.feature-title {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.2;
+}
+
+.feature-desc {
+  margin: 14px 0 12px;
+  color: var(--ink-500);
+  font-size: 15px;
+}
+
+.feature-meta {
+  margin: 0 0 18px;
+  color: var(--ink-700);
+  font-size: 13px;
+}
+
+.hall-hero {
+  padding: 18px 0 24px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.15;
+}
+
+.page-subtitle {
+  margin: 10px 0 0;
+  color: var(--ink-500);
+  font-size: 16px;
+}
+
+.hall-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+.hall-card,
+.hall-intro-card,
+.reading-guide-card,
+.author-summary-card {
+  border: var(--border);
+  border-radius: 22px;
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-md);
+}
+
+.hall-card-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+}
+
+.hall-card-count {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--accent-600);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hall-card-desc,
+.hall-card-guide {
+  color: var(--ink-500);
+  font-size: 14px;
+}
+
+.hall-card-guide {
+  min-height: 70px;
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide-card-meta,
+.guide-detail {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: 14px;
+}
+
+.guide-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accent-600);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.guide-route-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink-700);
+}
+
+.guide-route-list li + li {
+  margin-top: 6px;
+}
+
+.guide-card-link {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.hall-intro-card,
+.reading-guide-card,
+.author-summary-card {
+  margin-bottom: 28px;
+}
+
+.author-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+  padding: 24px;
+  border: var(--border);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 232, 216, 0.9));
+  box-shadow: var(--shadow-md);
+}
+
+.author-avatar {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-500), var(--teal-500));
+  color: #fff;
+  font-size: 30px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.author-info {
+  min-width: 0;
+}
+
+.author-name {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.author-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.author-works-count {
+  color: var(--ink-500);
+  font-size: 14px;
+}
+
+.reading-order-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--ink-700);
+}
+
+.reading-order-list li + li {
+  margin-top: 6px;
+}
+
+.reading-order-list a {
+  color: var(--accent-500);
+}
+
 /* ---------- 筛选片 ---------- */
 .chip-row {
   display: flex;
@@ -297,6 +536,12 @@ img {
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -343,6 +588,13 @@ img {
   flex-direction: column;
 }
 
+.book-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
 .book-title {
   margin: 0;
   font-size: 19px;
@@ -379,6 +631,46 @@ img {
   padding: 4px 8px;
   border-radius: 999px;
   background: var(--paper-300);
+}
+
+.tag-tier {
+  background: var(--color-primary-soft);
+  color: var(--accent-600);
+}
+
+.completion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.completion-badge strong {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.completion-l1 {
+  background: rgba(31, 127, 123, 0.12);
+  color: var(--teal-500);
+}
+
+.completion-l2 {
+  background: rgba(180, 138, 38, 0.12);
+  color: var(--gold-500);
+}
+
+.completion-l3 {
+  background: rgba(204, 92, 47, 0.14);
+  color: var(--accent-500);
+}
+
+.completion-l4 {
+  background: rgba(24, 19, 15, 0.1);
+  color: var(--ink-900);
 }
 
 .card-foot {
@@ -1204,6 +1496,29 @@ body.reader-theme-dark footer {
 @media (max-width: 760px) {
   .topbar-inner {
     flex-wrap: wrap;
+  }
+
+  .library-hero-grid,
+  .library-stat-grid,
+  .book-grid,
+  .hall-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .library-hero-copy,
+  .feature-callout,
+  .author-header,
+  .hall-card,
+  .hall-intro-card,
+  .reading-guide-card,
+  .author-summary-card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .author-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .nav-toggle {

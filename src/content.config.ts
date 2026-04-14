@@ -18,6 +18,10 @@ const books = defineCollection({
     source: z.string(),
     sourceUrl: z.string().url(),
     summary: z.string(),
+    // 馆藏策展层字段先做成可选，兼容现有旧书目数据。
+    collectionTier: z.enum(['core', 'featured', 'shelf']).optional(),
+    completionLevel: z.enum(['L1', 'L2', 'L3', 'L4']).optional(),
+    featuredTopics: z.array(z.string()).optional(),
   }),
 });
 

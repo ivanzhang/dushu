@@ -3,6 +3,10 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import ReaderControls from '../../../components/ReaderControls.astro';
 import ChapterNav from '../../../components/ChapterNav.astro';
+import {
+  getChapterBookIdsForBook,
+  normalizeChapterBookSlug,
+} from '../../../lib/library';
 
 export async function getStaticPaths() {
   const chapters = await getCollection('chapters');
@@ -11,9 +15,9 @@ export async function getStaticPaths() {
   const bookMap = new Map(books.map((b) => [b.id, b]));
 
   return chapters.map((ch) => {
-    const bookSlug = ch.data.bookId;
-    // 章节文件 slug：去掉 "bookSlug/" 前缀
-    const chapterFileSlug = ch.id.replace(`${bookSlug}/`, '');
+    const bookSlug = normalizeChapterBookSlug(ch.data.bookId);
+    // 章节文件 slug 用实际文件名，兼容历史目录名与 canonical slug 不一致的情况。
+    const chapterFileSlug = ch.id.split('/').pop()!;
     const book = bookMap.get(bookSlug);
 
     return {
@@ -30,18 +34,20 @@ interface Props {
 
 const { chapter, bookTitle } = Astro.props;
 const { slug: bookSlug, chapter: chapterFileSlug } = Astro.params;
+const canonicalBookSlug = normalizeChapterBookSlug(bookSlug ?? chapter.data.bookId);
 
 // 渲染 Markdown 正文
 const { Content } = await render(chapter);
 
 // 获取同书所有章节，用于计算上下章
 const allChapters = await getCollection('chapters');
+const chapterAliases = getChapterBookIdsForBook(canonicalBookSlug);
 const bookChapters = allChapters
-  .filter((ch) => ch.data.bookId === bookSlug)
+  .filter((ch) => chapterAliases.includes(ch.data.bookId))
   .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 
 const currentIndex = bookChapters.findIndex((ch) => {
-  const fileSlug = ch.id.replace(`${bookSlug}/`, '');
+  const fileSlug = ch.id.split('/').pop()!;
   return fileSlug === chapterFileSlug;
 });
 
@@ -52,10 +58,10 @@ const nextChapter =
     : null;
 
 const prevSlug = prevChapter
-  ? prevChapter.id.replace(`${bookSlug}/`, '')
+  ? prevChapter.id.split('/').pop()
   : undefined;
 const nextSlug = nextChapter
-  ? nextChapter.id.replace(`${bookSlug}/`, '')
+  ? nextChapter.id.split('/').pop()
   : undefined;
 
 const totalChapters = bookChapters.length;
@@ -72,17 +78,24 @@ const currentChapterNumber = chapter.data.chapterNumber;
     <nav class="breadcrumb" aria-label="面包屑">
       <a href="/">首页</a>
       <span class="breadcrumb-sep">›</span>
-      <a href={`/book/${bookSlug}`}>{bookTitle}</a>
+      <a href={`/book/${canonicalBookSlug}`}>{bookTitle}</a>
       <span class="breadcrumb-sep">›</span>
       <span aria-current="page">{chapter.data.title}</span>
     </nav>
 
     <!-- 阅读控件 -->
-    <ReaderControls />
+    <ReaderControls
+      bookSlug={canonicalBookSlug}
+      bookTitle={bookTitle}
+      chapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
+      chapterTitle={chapter.data.title}
+      chapterNumber={currentChapterNumber}
+      totalChapters={totalChapters}
+    />
 
     <!-- 章节上导航 -->
     <ChapterNav
-      bookSlug={bookSlug!}
+      bookSlug={canonicalBookSlug}
       currentChapter={currentChapterNumber}
       totalChapters={totalChapters}
       prevSlug={prevSlug}
@@ -93,7 +106,7 @@ const currentChapterNumber = chapter.data.chapterNumber;
     <article class="reader-article">
       <header class="chapter-header">
         <p class="chapter-book-title">
-          <a href={`/book/${bookSlug}`}>{bookTitle}</a>
+          <a href={`/book/${canonicalBookSlug}`}>{bookTitle}</a>
         </p>
         <h1 class="chapter-title">{chapter.data.title}</h1>
         <p class="chapter-info">{chapter.data.wordCount} 字</p>
@@ -106,7 +119,7 @@ const currentChapterNumber = chapter.data.chapterNumber;
 
     <!-- 章节下导航 -->
     <ChapterNav
-      bookSlug={bookSlug!}
+      bookSlug={canonicalBookSlug}
       currentChapter={currentChapterNumber}
       totalChapters={totalChapters}
       prevSlug={prevSlug}

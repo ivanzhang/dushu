@@ -1,0 +1,273 @@
+---
+/**
+ * BookReaderHub.astro
+ * 书籍页阅读工具区：继续阅读、最近阅读、书签和 EPUB 下载。
+ */
+
+import { buildEpubDownloadPath } from '../lib/epub';
+
+interface Props {
+  bookSlug: string;
+  bookTitle: string;
+  firstChapterHref?: string;
+}
+
+const { bookSlug, bookTitle, firstChapterHref } = Astro.props;
+const safeFirstChapterHref = firstChapterHref ?? `/book/${bookSlug}`;
+const epubHref = buildEpubDownloadPath(bookSlug);
+---
+
+<section
+  class="reading-guide-card reader-hub"
+  data-book-reader-hub
+  data-book-slug={bookSlug}
+  data-book-title={bookTitle}
+  data-first-chapter-href={safeFirstChapterHref}
+>
+  <div class="reader-hub-head">
+    <div>
+      <h2 class="section-title">阅读工具</h2>
+      <p class="book-progress-text">
+        继续阅读、查看最近阅读和我的书签，也可以直接下载 EPUB 离线阅读。
+      </p>
+    </div>
+
+    <div class="reader-hub-actions">
+      <a href={safeFirstChapterHref} class="btn btn-primary" data-continue-reading>继续阅读</a>
+      <a href={epubHref} class="btn btn-secondary" download>下载 EPUB</a>
+    </div>
+  </div>
+
+  <div class="reader-hub-grid">
+    <article class="reader-mini-card">
+      <p class="reader-mini-label">上次进度</p>
+      <p class="reader-mini-value" data-last-progress>还没有阅读记录</p>
+      <p class="reader-mini-sub" data-last-progress-detail>从第一章开始，也能直接进入阅读状态。</p>
+    </article>
+
+    <article class="reader-mini-card">
+      <p class="reader-mini-label">最近阅读</p>
+      <ul class="reader-link-list" data-history-list>
+        <li class="reader-empty">还没有最近阅读记录。</li>
+      </ul>
+    </article>
+
+    <article class="reader-mini-card">
+      <p class="reader-mini-label">我的书签</p>
+      <ul class="reader-link-list" data-bookmark-list>
+        <li class="reader-empty">还没有书签，读到喜欢的位置时再记一下。</li>
+      </ul>
+    </article>
+  </div>
+
+  <p class="reader-hub-note">当前 EPUB 收录的是本站已整理入馆的章节内容。</p>
+</section>
+
+<script>
+  import {
+    READER_STORAGE_KEY,
+    buildChapterHref,
+    formatProgressLabel,
+    getBookReadingSnapshot,
+    parseReaderState,
+  } from '../lib/reader-state';
+
+  const root = document.querySelector<HTMLElement>('[data-book-reader-hub]');
+
+  if (root) {
+    const bookSlug = root.dataset.bookSlug ?? '';
+    const defaultHref = root.dataset.firstChapterHref ?? `/book/${bookSlug}`;
+    const continueLink = root.querySelector<HTMLAnchorElement>('[data-continue-reading]');
+    const lastProgress = root.querySelector<HTMLElement>('[data-last-progress]');
+    const lastProgressDetail = root.querySelector<HTMLElement>('[data-last-progress-detail]');
+    const historyList = root.querySelector<HTMLElement>('[data-history-list]');
+    const bookmarkList = root.querySelector<HTMLElement>('[data-bookmark-list]');
+
+    function renderLinkList(
+      target: HTMLElement | null,
+      items: Array<{
+        chapterSlug: string;
+        chapterTitle: string;
+        chapterNumber: number;
+        progress: number;
+      }>,
+      emptyText: string,
+    ) {
+      if (!target) {
+        return;
+      }
+
+      target.replaceChildren();
+
+      if (items.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'reader-empty';
+        empty.textContent = emptyText;
+        target.append(empty);
+        return;
+      }
+
+      items.slice(0, 4).forEach((item) => {
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
+        const meta = document.createElement('span');
+
+        link.className = 'reader-link-item';
+        link.href = buildChapterHref(bookSlug, item.chapterSlug);
+        link.textContent = `第 ${item.chapterNumber} 章 · ${item.chapterTitle}`;
+
+        meta.className = 'reader-link-meta';
+        meta.textContent = formatProgressLabel(item.progress);
+
+        listItem.append(link, meta);
+        target.append(listItem);
+      });
+    }
+
+    function renderReaderHub() {
+      const state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const snapshot = getBookReadingSnapshot(state, bookSlug);
+
+      if (continueLink) {
+        continueLink.href = snapshot.progress
+          ? buildChapterHref(bookSlug, snapshot.progress.chapterSlug)
+          : defaultHref;
+        continueLink.textContent = snapshot.progress
+          ? `继续阅读 · 第 ${snapshot.progress.chapterNumber} 章`
+          : '继续阅读';
+      }
+
+      if (snapshot.progress) {
+        if (lastProgress) {
+          lastProgress.textContent = `读到第 ${snapshot.progress.chapterNumber} 章 · ${formatProgressLabel(snapshot.progress.progress)}`;
+        }
+        if (lastProgressDetail) {
+          lastProgressDetail.textContent = snapshot.progress.chapterTitle;
+        }
+      } else {
+        if (lastProgress) {
+          lastProgress.textContent = '还没有阅读记录';
+        }
+        if (lastProgressDetail) {
+          lastProgressDetail.textContent = '从第一章开始，也能直接进入阅读状态。';
+        }
+      }
+
+      renderLinkList(historyList, snapshot.history, '还没有最近阅读记录。');
+      renderLinkList(bookmarkList, snapshot.bookmarks, '还没有书签，读到喜欢的位置时再记一下。');
+    }
+
+    renderReaderHub();
+    window.addEventListener('storage', (event) => {
+      if (event.key === READER_STORAGE_KEY) {
+        renderReaderHub();
+      }
+    });
+  }
+</script>
+
+<style>
+  .reader-hub {
+    margin-bottom: 2rem;
+  }
+
+  .reader-hub-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .reader-hub-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .reader-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .reader-mini-card {
+    border: var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.74);
+  }
+
+  .reader-mini-label {
+    margin: 0 0 0.55rem;
+    font-size: 0.82rem;
+    color: var(--accent-600);
+    letter-spacing: 0.08em;
+  }
+
+  .reader-mini-value {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+
+  .reader-mini-sub,
+  .reader-hub-note {
+    margin: 0.55rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+
+  .reader-link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .reader-link-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  .reader-link-item {
+    color: var(--ink-700);
+    line-height: 1.6;
+  }
+
+  .reader-link-item:hover {
+    color: var(--accent-500);
+  }
+
+  .reader-link-meta {
+    flex-shrink: 0;
+    color: var(--ink-300);
+    font-size: 0.82rem;
+  }
+
+  .reader-empty {
+    color: var(--ink-500);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 880px) {
+    .reader-hub-head {
+      flex-direction: column;
+    }
+
+    .reader-hub-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .reader-hub-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

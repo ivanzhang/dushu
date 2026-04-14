@@ -1,0 +1,27 @@
+---
+/**
+ * CompletionBadge.astro
+ * 用统一样式展示书籍完成度标签。
+ *
+ * 使用示例：
+ * <CompletionBadge level="L3" />
+ */
+
+interface Props {
+  level: 'L1' | 'L2' | 'L3' | 'L4';
+}
+
+const { level } = Astro.props;
+
+const levelTextMap = {
+  L1: '书目可见',
+  L2: '可试读',
+  L3: '可连续阅读',
+  L4: '完整收录',
+} as const;
+---
+
+<span class={`completion-badge completion-${level.toLowerCase()}`}>
+  <strong>{level}</strong>
+  <span>{levelTextMap[level]}</span>
+</span>

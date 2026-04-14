@@ -1,7 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
+import BookReaderHub from '../../../components/BookReaderHub.astro';
+import CompletionBadge from '../../../components/CompletionBadge.astro';
 import Base from '../../../layouts/Base.astro';
 import BookCard from '../../../components/BookCard.astro';
+import {
+  getBookLibraryState,
+  getBookTopicEntries,
+  getChapterBookIdsForBook,
+  getCollectionCoverageText,
+} from '../../../lib/library';
 import { getRecommendations } from '../../../lib/recommend';
 
 export async function getStaticPaths() {
@@ -17,9 +25,20 @@ const { data } = book;
 
 // 章节列表
 const allChapters = await getCollection('chapters');
+const chapterAliases = getChapterBookIdsForBook(book.id);
 const bookChapters = allChapters
-  .filter((ch) => ch.data.bookId === book.id)
+  .filter((ch) => chapterAliases.includes(ch.data.bookId))
   .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+
+const bookLibraryState = getBookLibraryState(book);
+const topicEntries = getBookTopicEntries(book);
+const collectionCoverageText = getCollectionCoverageText(
+  bookChapters.length,
+  data.chapterCount,
+);
+const firstChapterHref = bookChapters[0]
+  ? `/book/${book.id}/${bookChapters[0].id.split('/').pop()!}`
+  : undefined;
 
 // 推荐书籍
 const allBooks = await getCollection('books');
@@ -94,12 +113,9 @@ const bookJsonLd = JSON.stringify({
             <dt>版权</dt>
             <dd>{copyrightLabels[data.copyrightStatus] ?? data.copyrightStatus}</dd>
           </dl>
-          {bookChapters.length > 0 && (
-            <a
-              href={`/book/${book.id}/${bookChapters[0].id.split('/').pop()}`}
-              class="btn-start-reading"
-            >
-              开始阅读
+          {firstChapterHref && (
+            <a href={firstChapterHref} class="btn-start-reading">
+              从第一章开始
             </a>
           )}
         </div>
@@ -108,6 +124,27 @@ const bookJsonLd = JSON.stringify({
       <!-- 右：详情内容 -->
       <main class="book-main">
         <h1 class="book-detail-title">{data.title}</h1>
+
+        <section class="book-progress-card">
+          <div>
+            <h2 class="section-title">完成度</h2>
+            {bookLibraryState.completionLevel ? (
+              <CompletionBadge level={bookLibraryState.completionLevel} />
+            ) : (
+              <span class="tag">待评估</span>
+            )}
+          </div>
+          <div>
+            <h2 class="section-title">收录进度</h2>
+            <p class="book-progress-text">{collectionCoverageText}</p>
+          </div>
+        </section>
+
+        <BookReaderHub
+          bookSlug={book.id}
+          bookTitle={data.title}
+          firstChapterHref={firstChapterHref}
+        />
 
         <!-- 分类标签 -->
         <div class="book-tags-row">
@@ -129,6 +166,20 @@ const bookJsonLd = JSON.stringify({
           <h2 class="section-title">内容简介</h2>
           <p class="book-summary-text">{data.summary}</p>
         </section>
+
+        {topicEntries.length > 0 && (
+          <section class="reading-guide-card">
+            <h2 class="section-title">专题推荐</h2>
+            <div class="book-tags-row">
+              {topicEntries.map((topic) => (
+                <a href={`/topic/${topic.slug}`} class="tag">{topic.name}</a>
+              ))}
+            </div>
+            <p class="book-progress-text">
+              可以顺着这些专题继续逛同一路阅读兴趣下的馆藏。
+            </p>
+          </section>
+        )}
 
         <!-- 章节目录 -->
         <section class="chapter-catalog-section">
@@ -199,12 +250,6 @@ const bookJsonLd = JSON.stringify({
     margin-bottom: 3rem;
   }
 
-  @media (max-width: 720px) {
-    .book-detail-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-
   /* 侧边栏 */
   .book-sidebar {
     position: sticky;
@@ -247,6 +292,23 @@ const bookJsonLd = JSON.stringify({
   .meta-list dd {
     color: var(--color-text);
     font-weight: 500;
+  }
+
+  .book-progress-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+    border: var(--border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .book-progress-text {
+    margin: 0.5rem 0 0;
+    color: var(--ink-700, #2a201a);
+    font-size: 0.95rem;
   }
 
   .btn-start-reading {
@@ -364,5 +426,15 @@ const bookJsonLd = JSON.stringify({
   .empty-tip {
     color: var(--color-text-muted);
     font-size: 0.9rem;
+  }
+
+  @media (max-width: 720px) {
+    .book-detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .book-progress-card {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

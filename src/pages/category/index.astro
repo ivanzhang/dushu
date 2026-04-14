@@ -1,0 +1,107 @@
+---
+import { getCollection } from 'astro:content';
+import {
+  categoryRecommendedRoutes,
+  categorySelectionGuide,
+} from '../../data/library/entry-guides';
+import Base from '../../layouts/Base.astro';
+import {
+  categoryNameToRouteSlug,
+  libraryCategories,
+} from '../../lib/library';
+
+const books = await getCollection('books');
+
+// 分类总览页展示所有已规划分馆，并标注哪些已经有藏书。
+const categoryCards = libraryCategories.map((category) => {
+  const bookCount = books.filter((book) =>
+    book.data.category.includes(category.name),
+  ).length;
+
+  return {
+    ...category,
+    bookCount,
+    href: `/category/${categoryNameToRouteSlug(category.name)}`,
+  };
+});
+---
+
+<Base
+  title="分馆浏览"
+  description="浏览墨潮读书的小型读书馆分馆入口，按题材与阅读路线进入馆藏。"
+>
+  <div class="container">
+    <section class="hall-hero">
+      <p class="hero-kicker">分馆浏览</p>
+      <h1 class="page-title">分馆浏览</h1>
+      <p class="page-subtitle">
+        从历史演义、世情小说、志怪传奇到古文入门，先按兴趣选馆，再往里逛书。
+      </p>
+    </section>
+
+    <section class="hall-intro-card">
+      <h2 class="section-title">{categorySelectionGuide.title}</h2>
+      <p>{categorySelectionGuide.description}</p>
+      <ol class="reading-order-list">
+        {categorySelectionGuide.steps.map((step) => (
+          <li>{step}</li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">推荐逛法</h2>
+          <p class="section-sub">如果你还拿不准先去哪一馆，可以先照着这几条路线走。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {categoryRecommendedRoutes.map((route) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{route.title}</h3>
+            <p class="hall-card-desc">{route.description}</p>
+            <ol class="guide-route-list">
+              {route.route.map((step) => (
+                <li>{step}</li>
+              ))}
+            </ol>
+            {route.meta && <p class="guide-card-meta">{route.meta}</p>}
+            <a href={route.href} class="btn btn-secondary guide-card-link">{route.ctaLabel}</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">全部分馆</h2>
+          <p class="section-sub">每一馆都写了适合谁，方便你按自己的阅读状态选择入口。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {categoryCards.map((category) => (
+          <article class="hall-card guide-card">
+            <p class="hall-card-count">
+              {category.bookCount > 0 ? `已收录 ${category.bookCount} 本` : '即将扩充'}
+            </p>
+            <h2 class="hall-card-title">{category.name}</h2>
+            <p class="hall-card-desc">{category.description}</p>
+            <p class="guide-label">适合谁</p>
+            <p class="guide-detail">{category.audience}</p>
+            <p class="guide-label">入馆建议</p>
+            <p class="guide-detail">{category.readingGuide}</p>
+            {category.bookCount > 0 ? (
+              <a href={category.href} class="btn btn-secondary guide-card-link">进入分馆</a>
+            ) : (
+              <span class="tag tag-tier">待补馆藏</span>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>

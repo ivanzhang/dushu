@@ -1,0 +1,29 @@
+{
+  "title": "聊斋志异",
+  "author": "蒲松龄",
+  "authorSlug": "pusongling",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "志怪传奇"
+  ],
+  "tags": [
+    "狐鬼",
+    "志怪",
+    "短篇",
+    "异闻"
+  ],
+  "wordCount": 430000,
+  "chapterCount": 491,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者蒲松龄（1640—1715）逝世已超过310年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E8%81%8A%E9%BD%8B%E5%BF%97%E7%95%B0",
+  "summary": "《聊斋志异》汇聚狐鬼花妖、人世离合与士人遭际，是中国志怪传奇最重要的入口之一。它非常适合做站内短篇试读和夜读专题，也是首页策展感最强的一类馆藏。",
+  "collectionTier": "featured",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "strange-tales"
+  ]
+}

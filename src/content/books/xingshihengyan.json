@@ -1,0 +1,29 @@
+{
+  "title": "醒世恒言",
+  "author": "冯梦龙",
+  "authorSlug": "fengmenglong",
+  "dynasty": "明代",
+  "category": [
+    "古典小说",
+    "话本短篇"
+  ],
+  "tags": [
+    "话本",
+    "短篇",
+    "世情",
+    "冯梦龙"
+  ],
+  "wordCount": 430000,
+  "chapterCount": 40,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者冯梦龙（1574—1646）逝世已超过370年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E9%86%92%E4%B8%96%E6%81%86%E8%A8%80",
+  "summary": "《醒世恒言》同属“三言”，题材横跨爱情、伦理、奇闻与市井，是把话本短篇区做得更像一整排书架时不可缺少的一部。",
+  "collectionTier": "shelf",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "three-yans"
+  ]
+}

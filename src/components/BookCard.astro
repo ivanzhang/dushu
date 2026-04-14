@@ -4,6 +4,8 @@
  * 展示书名、作者、分类标签、字数、状态、简介摘要，链接到 /book/{slug}
  */
 
+import CompletionBadge from './CompletionBadge.astro';
+
 interface Props {
   slug: string;
   title: string;
@@ -13,6 +15,8 @@ interface Props {
   status: string;
   wordCount: number;
   summary: string;
+  tierLabel?: string;
+  completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
 }
 
 const {
@@ -24,6 +28,8 @@ const {
   status,
   wordCount,
   summary,
+  tierLabel,
+  completionLevel,
 } = Astro.props;
 
 /** 将字数格式化为"X 万字" */
@@ -45,6 +51,13 @@ const allTags = [...category, ...tags].slice(0, 4);
   </a>
 
   <div class="book-body">
+    {(tierLabel || completionLevel) && (
+      <div class="book-badges">
+        {tierLabel && <span class="tag tag-tier">{tierLabel}</span>}
+        {completionLevel && <CompletionBadge level={completionLevel} />}
+      </div>
+    )}
+
     <h3 class="book-title">
       <a href={href}>{title}</a>
     </h3>

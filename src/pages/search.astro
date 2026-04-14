@@ -1,5 +1,31 @@
 ---
+import {
+  searchAuthorGuides,
+  searchKeywordGuides,
+  searchQuickStartGuides,
+  searchReadingModeGuides,
+  searchTopicGuides,
+} from '../data/library/entry-guides';
 import Base from '../layouts/Base.astro';
+import {
+  getAuthorProfileBySlug,
+  getTopicMetaBySlug,
+} from '../lib/library';
+
+// 统一生成可复用的搜索深链接，方便作者卡、专题卡和热门词共用。
+// 使用示例：
+// const href = buildSearchHref('志怪');
+const buildSearchHref = (query: string) => `/search?q=${encodeURIComponent(query)}`;
+
+const featuredSearchAuthors = searchAuthorGuides.flatMap((guide) => {
+  const author = getAuthorProfileBySlug(guide.authorSlug);
+  return author ? [{ guide, author }] : [];
+});
+
+const featuredSearchTopics = searchTopicGuides.flatMap((guide) => {
+  const topic = getTopicMetaBySlug(guide.topicSlug);
+  return topic ? [{ guide, topic }] : [];
+});
 ---
 
 <Base
@@ -12,6 +38,124 @@ import Base from '../layouts/Base.astro';
       <p class="page-desc">搜索书名、作者或正文内容</p>
     </header>
 
+    <section class="notice" style="margin-bottom: 1.25rem;">
+      还不知道从哪本开始？可以先去
+      <a href="/category" style="color: var(--accent-500);">分馆浏览</a>
+      ，或者直接逛
+      <a href="/topic/four-masterpieces" style="color: var(--accent-500);">四大名著</a>
+      、
+      <a href="/topic/strange-tales" style="color: var(--accent-500);">志怪传奇</a>
+      两个专题入口。
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">如果你不知道搜什么</h2>
+          <p class="section-sub">先用熟悉入口缩小范围，再回来搜关键词，会比空搜更容易命中。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {searchQuickStartGuides.map((guide) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{guide.title}</h3>
+            <p class="hall-card-desc">{guide.description}</p>
+            {guide.meta && <p class="guide-card-meta">{guide.meta}</p>}
+            <a href={guide.href} class="btn btn-secondary guide-card-link">{guide.ctaLabel}</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">热门搜词</h2>
+          <p class="section-sub">点一下就能把关键词直接带进搜索框，适合先用题材词试探馆藏手感。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {searchKeywordGuides.map((guide) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{guide.label}</h3>
+            <p class="hall-card-desc">{guide.hint}</p>
+            <p class="guide-card-meta">会直接跳到带关键词的搜索结果页。</p>
+            <a href={buildSearchHref(guide.query)} class="btn btn-secondary guide-card-link">
+              搜“{guide.label}”
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">从作者进入</h2>
+          <p class="section-sub">适合先认人再找书：先逛作者展架，再回到搜索页缩小到作品名或题材词。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {featuredSearchAuthors.map(({ guide, author }) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{author.name}</h3>
+            <p class="hall-card-desc">{guide.description}</p>
+            <p class="guide-card-meta">
+              推荐试搜：
+              <a href={buildSearchHref(guide.searchQuery)}>{guide.searchQuery}</a>
+            </p>
+            <a href={`/author/${author.slug}`} class="btn btn-secondary guide-card-link">进入作者展架</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">从专题进入</h2>
+          <p class="section-sub">适合“我还没想好具体搜什么”的读者，先走专题入口，再回搜人物、题材或卷名。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {featuredSearchTopics.map(({ guide, topic }) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{topic.name}</h3>
+            <p class="hall-card-desc">{guide.description}</p>
+            <p class="guide-card-meta">
+              推荐试搜：
+              <a href={buildSearchHref(guide.searchQuery)}>{guide.searchQuery}</a>
+            </p>
+            <a href={`/topic/${topic.slug}`} class="btn btn-secondary guide-card-link">进入专题入口</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">按读法找书</h2>
+          <p class="section-sub">你也可以先决定自己想怎么读，再去选入口，不一定非得先想到书名。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {searchReadingModeGuides.map((guide) => (
+          <article class="hall-card guide-card">
+            <h3 class="hall-card-title">{guide.title}</h3>
+            <p class="hall-card-desc">{guide.description}</p>
+            {guide.meta && <p class="guide-card-meta">{guide.meta}</p>}
+            <a href={guide.href} class="btn btn-secondary guide-card-link">{guide.ctaLabel}</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
     <!-- Pagefind UI 挂载点 -->
     <div id="search" class="search-wrap"></div>
   </div>
@@ -23,7 +167,7 @@ import Base from '../layouts/Base.astro';
 <script is:inline>
   window.addEventListener('DOMContentLoaded', function() {
     import('/pagefind/pagefind-ui.js').then(function(mod) {
-      new mod.PagefindUI({
+      var pagefindUi = new mod.PagefindUI({
         element: '#search',
         showImages: false,
         excerptLength: 60,
@@ -32,6 +176,12 @@ import Base from '../layouts/Base.astro';
           zero_results: '未找到相关结果，请尝试其他关键词',
         },
       });
+
+      // 支持通过 /search?q=关键词 直达搜索结果，方便首页和专题页复用搜索入口。
+      var initialQuery = new URLSearchParams(window.location.search).get('q');
+      if (initialQuery) {
+        pagefindUi.triggerSearch(initialQuery);
+      }
     }).catch(function() {
       var el = document.getElementById('search');
       if (el) {
@@ -78,5 +228,9 @@ import Base from '../layouts/Base.astro';
 
   :global(.pagefind-ui__result-title a) {
     color: var(--accent-500, #cc5c2f) !important;
+  }
+
+  .guide-card-meta a {
+    color: var(--accent-500, #cc5c2f);
   }
 </style>

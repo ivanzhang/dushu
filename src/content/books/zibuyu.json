@@ -1,0 +1,29 @@
+{
+  "title": "子不语",
+  "author": "袁枚",
+  "authorSlug": "yuanmei",
+  "dynasty": "清代",
+  "category": [
+    "古典小说",
+    "志怪笔记"
+  ],
+  "tags": [
+    "志怪",
+    "笔记",
+    "逸闻",
+    "怪谈"
+  ],
+  "wordCount": 220000,
+  "chapterCount": 24,
+  "status": "完结",
+  "copyrightStatus": "public-domain",
+  "copyrightNote": "本作品已进入公有领域，原作者袁枚（1716—1798）逝世已超过220年。",
+  "source": "维基文库",
+  "sourceUrl": "https://zh.wikisource.org/wiki/%E5%AD%90%E4%B8%8D%E8%AA%9E",
+  "summary": "《子不语》以短篇异闻和鬼狐故事见长，既有世情观察，也有怪力乱神的趣味，是志怪笔记分馆中最适合与《聊斋志异》形成对读关系的一部作品。",
+  "collectionTier": "shelf",
+  "completionLevel": "L2",
+  "featuredTopics": [
+    "strange-tales"
+  ]
+}

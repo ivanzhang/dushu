@@ -1,0 +1,35 @@
+---
+/**
+ * FeatureCallout.astro
+ * 首页主推卡片，用来强化“馆入口页”的策展感。
+ *
+ * 使用示例：
+ * <FeatureCallout title="馆长推荐" description="..." href="/book/hongloumeng" />
+ */
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  href: string;
+  ctaLabel?: string;
+  meta?: string;
+}
+
+const {
+  eyebrow = '馆长推荐',
+  title,
+  description,
+  href,
+  ctaLabel = '进入书架',
+  meta,
+} = Astro.props;
+---
+
+<article class="feature-callout">
+  <p class="feature-eyebrow">{eyebrow}</p>
+  <h2 class="feature-title">{title}</h2>
+  <p class="feature-desc">{description}</p>
+  {meta && <p class="feature-meta">{meta}</p>}
+  <a href={href} class="btn btn-primary">{ctaLabel}</a>
+</article>
