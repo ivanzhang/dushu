@@ -10,9 +10,10 @@ interface Props {
   bookSlug: string;
   bookTitle: string;
   firstChapterHref?: string;
+  collectionStatusText?: string;
 }
 
-const { bookSlug, bookTitle, firstChapterHref } = Astro.props;
+const { bookSlug, bookTitle, firstChapterHref, collectionStatusText } = Astro.props;
 const safeFirstChapterHref = firstChapterHref ?? `/book/${bookSlug}`;
 const epubHref = buildEpubDownloadPath(bookSlug);
 ---
@@ -60,7 +61,11 @@ const epubHref = buildEpubDownloadPath(bookSlug);
     </article>
   </div>
 
-  <p class="reader-hub-note">当前 EPUB 收录的是本站已整理入馆的章节内容。</p>
+  <p class="reader-hub-note">
+    {collectionStatusText
+      ? `${collectionStatusText}，也可直接下载 EPUB 离线阅读。`
+      : '当前 EPUB 收录的是本站已整理入馆的章节内容。'}
+  </p>
 </section>
 
 <script>

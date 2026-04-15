@@ -12,7 +12,7 @@ import {
 const books = await getCollection('books');
 const chapters = await getCollection('chapters');
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(books);
-const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(books, chapters);
+const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(books, chapters);
 const deepReadingBooks = pickPlannedBooks(books, ['hongloumeng', 'sanguoyanyi', 'xiyouji']);
 
 const bookMetaList = books.map((book) => ({
@@ -23,6 +23,7 @@ const bookMetaList = books.map((book) => ({
   wordCount: book.data.wordCount,
   tierLabel: tierLabelMap[book.id],
   completionLevel: completionLevelMap[book.id],
+  collectionStatusText: collectionStatusMap[book.id],
   collectionProgressText: collectionProgressMap[book.id],
   collectionDepthText: collectionDepthMap[book.id],
 }));
@@ -59,6 +60,9 @@ const bookMetaList = books.map((book) => ({
             <p class="guide-card-meta">
               {collectionProgressMap[book.id] ?? '馆藏进度整理中'}
             </p>
+            {collectionStatusMap[book.id] && (
+              <p class="guide-card-meta">{collectionStatusMap[book.id]}</p>
+            )}
             <p class="guide-card-meta">
               {collectionDepthMap[book.id] ?? '连读深度整理中'}
             </p>

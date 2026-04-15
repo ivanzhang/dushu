@@ -48,7 +48,7 @@ const representativeBooks = featuredBooks.length > 0
   ? featuredBooks
   : categoryBooks.slice(0, 3);
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(categoryBooks);
-const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(categoryBooks, allChapters);
+const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(categoryBooks, allChapters);
 
 // 把邻馆串逛配置解析为可直接渲染的链接数据。
 const crossShelfEntries = (categoryMeta?.crossShelfLinks ?? [])
@@ -137,6 +137,7 @@ const crossShelfEntries = (categoryMeta?.crossShelfLinks ?? [])
       showCompletion={true}
       tierLabelMap={tierLabelMap}
       completionLevelMap={completionLevelMap}
+      collectionStatusMap={collectionStatusMap}
       collectionProgressMap={collectionProgressMap}
       collectionDepthMap={collectionDepthMap}
       emptyText="这一分馆的代表作品正在整理中。"
@@ -164,6 +165,7 @@ const crossShelfEntries = (categoryMeta?.crossShelfLinks ?? [])
               summary={book.data.summary}
               tierLabel={tierLabelMap[book.id]}
               completionLevel={completionLevelMap[book.id]}
+              collectionStatusText={collectionStatusMap[book.id]}
               collectionProgressText={collectionProgressMap[book.id]}
               collectionDepthText={collectionDepthMap[book.id]}
             />

@@ -11,6 +11,7 @@
  *   totalChapterCount={120}
  *   latestChapterNumber={70}
  *   continuousChapterCount={70}
+ *   collectionStatusText="已全本收录，可直接从头读到完结"
  * />
  */
 
@@ -23,6 +24,7 @@ interface Props {
   totalChapterCount: number;
   latestChapterNumber: number;
   continuousChapterCount: number;
+  collectionStatusText?: string;
 }
 
 const {
@@ -32,6 +34,7 @@ const {
   totalChapterCount,
   latestChapterNumber,
   continuousChapterCount,
+  collectionStatusText,
 } = Astro.props;
 
 const epubHref = buildEpubDownloadPath(bookSlug);
@@ -54,7 +57,9 @@ const epubHref = buildEpubDownloadPath(bookSlug);
   </div>
 
   <p class="chapter-reader-hub-note">
-    想切回目录、继续别的书，或者回看书签和历史，都可以从这里直接跳转。
+    {collectionStatusText
+      ? `${collectionStatusText.replace('从头', '从当前章一路')}，也可以直接下载 EPUB。`
+      : '想切回目录、继续别的书，或者回看书签和历史，都可以从这里直接跳转。'}
   </p>
 </section>
 

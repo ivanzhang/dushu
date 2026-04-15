@@ -26,6 +26,13 @@ type MinimalChapterEntry = {
   };
 };
 
+type BookCollectionStatsShape = {
+  collectedChapterCount: number;
+  continuousChapterCount: number;
+  latestChapterNumber: number;
+  collectedWordCount: number;
+};
+
 // 统一管理书籍与章节之间的历史别名。
 // 使用示例：
 // const aliases = chapterBookAliases.shuihuzhuan;
@@ -258,15 +265,38 @@ export function getCollectionCoverageText(
   return `${collectedChapterCount} / ${totalChapterCount} 章 · ${percent}%`;
 }
 
+// 判断某本书是否已经达到“全本可读”，统一生成展示文案。
+// 使用示例：
+// const text = getBookCollectionStatusText(stats, 120);
+export function getBookCollectionStatusText(
+  stats: Pick<BookCollectionStatsShape, 'collectedChapterCount' | 'continuousChapterCount'>,
+  totalChapterCount: number,
+) {
+  if (totalChapterCount <= 0) {
+    return undefined;
+  }
+
+  if (stats.collectedChapterCount < totalChapterCount) {
+    return undefined;
+  }
+
+  if (stats.continuousChapterCount < totalChapterCount) {
+    return undefined;
+  }
+
+  return '已全本收录，可直接从头读到完结';
+}
+
 // 批量生成书卡展示所需的真实整理进度文案。
 // 使用示例：
-// const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(books, chapters);
+// const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(books, chapters);
 export function buildBookCollectionMaps<
   TBook extends MinimalBookEntry,
   TChapter extends MinimalChapterEntry,
 >(books: TBook[], chapters: TChapter[]) {
   const collectionProgressMap: Record<string, string> = {};
   const collectionDepthMap: Record<string, string> = {};
+  const collectionStatusMap: Record<string, string> = {};
 
   for (const book of books) {
     const stats = getBookCollectionStats(book.id, chapters);
@@ -279,9 +309,14 @@ export function buildBookCollectionMaps<
       ? `已整理到第 ${stats.latestChapterNumber} 章 / 共 ${totalChapterCount} 章`
       : `已整理到第 ${stats.latestChapterNumber} 章`;
     collectionDepthMap[book.id] = `可连读到第 ${stats.continuousChapterCount} 章`;
+
+    const collectionStatusText = getBookCollectionStatusText(stats, totalChapterCount);
+    if (collectionStatusText) {
+      collectionStatusMap[book.id] = collectionStatusText;
+    }
   }
 
-  return { collectionProgressMap, collectionDepthMap };
+  return { collectionProgressMap, collectionDepthMap, collectionStatusMap };
 }
 
 // 统计单本书当前真实已整理的章节规模。
@@ -290,7 +325,7 @@ export function buildBookCollectionMaps<
 export function getBookCollectionStats<T extends MinimalChapterEntry>(
   bookSlug: string,
   chapters: T[],
-) {
+): BookCollectionStatsShape {
   const chapterBookIds = new Set(getChapterBookIdsForBook(bookSlug));
   const chapterMap = new Map<number, T['data']>();
 

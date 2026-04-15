@@ -32,6 +32,7 @@ interface Props {
   completionLevelMap?: Record<string, 'L1' | 'L2' | 'L3' | 'L4'>;
   collectionProgressMap?: Record<string, string>;
   collectionDepthMap?: Record<string, string>;
+  collectionStatusMap?: Record<string, string>;
 }
 
 const {
@@ -44,6 +45,7 @@ const {
   completionLevelMap = {},
   collectionProgressMap = {},
   collectionDepthMap = {},
+  collectionStatusMap = {},
 } = Astro.props;
 ---
 
@@ -70,6 +72,7 @@ const {
             summary={book.data.summary}
             tierLabel={tierLabelMap[book.id]}
             completionLevel={showCompletion ? completionLevelMap[book.id] : undefined}
+            collectionStatusText={collectionStatusMap[book.id]}
             collectionProgressText={collectionProgressMap[book.id]}
             collectionDepthText={collectionDepthMap[book.id]}
           />

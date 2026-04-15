@@ -15,6 +15,7 @@ interface ReadingBookMeta {
   wordCount: number;
   completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
   tierLabel?: string;
+  collectionStatusText?: string;
   collectionProgressText?: string;
   collectionDepthText?: string;
 }
@@ -146,6 +147,7 @@ const { bookMetaList } = Astro.props;
     wordCount: number;
     completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
     tierLabel?: string;
+    collectionStatusText?: string;
     collectionProgressText?: string;
     collectionDepthText?: string;
   }
@@ -229,6 +231,7 @@ const { bookMetaList } = Astro.props;
         const metaText = document.createElement('p');
         const desc = document.createElement('p');
         const collection = document.createElement('p');
+        const collectionStatus = document.createElement('p');
         const progress = document.createElement('p');
         const detail = document.createElement('p');
         const actions = document.createElement('div');
@@ -238,6 +241,7 @@ const { bookMetaList } = Astro.props;
         title.className = 'reading-book-title';
         metaText.className = 'reading-book-meta';
         desc.className = 'reading-book-desc';
+        collectionStatus.className = 'reading-book-status';
         collection.className = 'reading-book-collection';
         progress.className = 'reading-book-progress';
         detail.className = 'reading-book-detail';
@@ -260,6 +264,7 @@ const { bookMetaList } = Astro.props;
         title.textContent = meta.title;
         metaText.textContent = `${meta.author} · ${formatWordCount(meta.wordCount)}`;
         desc.textContent = meta.summary;
+        collectionStatus.textContent = meta.collectionStatusText ?? '';
         collection.textContent = [meta.collectionProgressText, meta.collectionDepthText]
           .filter(Boolean)
           .join(' · ');
@@ -273,6 +278,9 @@ const { bookMetaList } = Astro.props;
         );
 
         const cardChildren = [badgeRow, title, metaText, desc] as HTMLElement[];
+        if (collectionStatus.textContent) {
+          cardChildren.push(collectionStatus);
+        }
         if (collection.textContent) {
           cardChildren.push(collection);
         }
@@ -459,6 +467,7 @@ const { bookMetaList } = Astro.props;
   }
 
   .reading-book-meta,
+  .reading-book-status,
   .reading-book-detail,
   .reading-book-desc,
   .reading-log-sub {
@@ -473,6 +482,11 @@ const { bookMetaList } = Astro.props;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .reading-book-status {
+    color: var(--accent-600);
+    font-weight: 600;
   }
 
   .reading-book-progress {

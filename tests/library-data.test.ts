@@ -255,7 +255,25 @@ describe('small library metadata foundation', () => {
     }
   });
 
-  it('核心 3 本的真实完成度已经提升到 L3', () => {
+  it('红楼梦与三国演义已经补齐到前 120 章，主书架开始具备完整长篇', () => {
+    const chapterRoot = join(process.cwd(), 'src/content/chapters');
+    const chapterTargets = {
+      hongloumeng: 120,
+      sanguoyanyi: 120,
+      xiyouji: 100,
+    };
+
+    for (const [slug, targetCount] of Object.entries(chapterTargets)) {
+      const chapterDir = join(chapterRoot, slug);
+      expect(existsSync(chapterDir), `${slug} 章节目录不存在`).toBe(true);
+      expect(
+        readdirSync(chapterDir).filter((file) => file.endsWith('.md')).length,
+        `${slug} 章节数还不足 ${targetCount}`,
+      ).toBeGreaterThanOrEqual(targetCount);
+    }
+  });
+
+  it('核心 3 本的真实完成度已经提升到 L4', () => {
     const coreBooks = ['hongloumeng', 'sanguoyanyi', 'xiyouji'];
 
     for (const slug of coreBooks) {
@@ -263,7 +281,7 @@ describe('small library metadata foundation', () => {
         readFileSync(join(process.cwd(), 'src/content/books', `${slug}.json`), 'utf8'),
       );
 
-      expect(bookJson.completionLevel, `${slug} 的 completionLevel 尚未提升`).toBe('L3');
+      expect(bookJson.completionLevel, `${slug} 的 completionLevel 尚未提升`).toBe('L4');
     }
   });
 

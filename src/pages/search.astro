@@ -24,7 +24,7 @@ const buildSearchHref = (query: string) => `/search?q=${encodeURIComponent(query
 const books = await getCollection('books');
 const chapters = await getCollection('chapters');
 const readingReturnBooks = pickPlannedBooks(books, ['hongloumeng', 'sanguoyanyi', 'xiyouji']);
-const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(readingReturnBooks, chapters);
+const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(readingReturnBooks, chapters);
 
 const featuredSearchAuthors = searchAuthorGuides.flatMap((guide) => {
   const author = getAuthorProfileBySlug(guide.authorSlug);
@@ -82,6 +82,9 @@ const featuredSearchTopics = searchTopicGuides.flatMap((guide) => {
             <p class="guide-card-meta">
               {collectionProgressMap[book.id] ?? '馆藏进度整理中'}
             </p>
+            {collectionStatusMap[book.id] && (
+              <p class="guide-card-meta">{collectionStatusMap[book.id]}</p>
+            )}
             <p class="guide-card-meta">
               {collectionDepthMap[book.id] ?? '连读深度整理中'}
             </p>

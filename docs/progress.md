@@ -2479,3 +2479,127 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
 ### 五、这轮收口后的状态
 
 到这里为止，这一批“核心三本到 `100` 回 + 章节页目录速览阅读标记”已经完成本地验证，可以直接进入提交、推送与部署观察阶段。
+
+## 2026-04-15 深夜续推（红楼梦 / 三国演义补齐全 120 回 + 全本可读状态外显）
+
+- 记录时间：2026-04-15
+- 记录目的：继续把主书架从“百回可连读”推进到“整本可读”，补齐《红楼梦》《三国演义》剩余章节，并把“已全本收录”的状态明确展示到首页、书页、章节页和阅读回访入口。
+
+### 一、今天继续推进的三件事
+
+#### 1. 《红楼梦》《三国演义》已补齐到全 120 回
+
+本轮已新增以下章节文件：
+
+- `src/content/chapters/hongloumeng/101.md` - `120.md`
+- `src/content/chapters/sanguoyanyi/101.md` - `120.md`
+
+对应结果：
+
+- 《红楼梦》：已可从第一回连续读到第 `120` 回
+- 《三国演义》：已可从第一回连续读到第 `120` 回
+- 《西游记》：继续保持全 `100` 回完整可读
+
+这一步完成后，核心三本主力长篇里已经有两部 `120` 回长篇和一部 `100` 回长篇全部收齐，主书架已经不只是“适合追读”，而是开始具备“整本读完”的小型免费读书馆能力。
+
+#### 2. “全本可读”状态已外显到主要阅读入口
+
+这一轮把“已全本收录”从后台事实推进成了前台可见状态：
+
+- `src/lib/library.ts`
+  - 新增 `getBookCollectionStatusText(...)`
+  - `buildBookCollectionMaps(...)` 现在会额外生成 `collectionStatusMap`
+- `src/components/BookCard.astro`
+  - 书卡现在会直接显示：
+    - `已全本收录，可直接从头读到完结`
+- `src/components/BookReaderHub.astro`
+  - 书页阅读工具区会明确提示当前书是否已经全本可读
+- `src/components/ChapterReaderHub.astro`
+  - 章节页快捷入口会提示：
+    - `可直接从当前章一路读到完结`
+- `src/components/ReadingDashboard.astro`
+  - “我的阅读”里的在读书卡也会展示全本可读状态
+- 已接入页面：
+  - `src/pages/index.astro`
+  - `src/pages/reading.astro`
+  - `src/pages/search.astro`
+  - `src/pages/book/[slug]/index.astro`
+  - `src/pages/book/[slug]/[chapter].astro`
+  - `src/pages/author/[slug].astro`
+  - `src/pages/category/[slug].astro`
+  - `src/pages/topic/[slug].astro`
+
+这样处理后，读者不需要自己判断“这本现在到底是不是全本”，首页书架、回访页、书页和章节页都能直接告诉他：这本已经可以一口气读完。
+
+#### 3. 核心三本完成度已提升到 `L4`
+
+既然核心三本已经都达到完整收录，这一轮同步把真实完成度从 `L3` 提升到了 `L4`：
+
+- `src/content/books/hongloumeng.json`
+- `src/content/books/sanguoyanyi.json`
+- `src/content/books/xiyouji.json`
+
+也就是说，四大名著主线里目前已经有：
+
+- 《红楼梦》：`L4`
+- 《三国演义》：`L4`
+- 《西游记》：`L4`
+- 《水浒传》：此前已是全本收录
+
+这让站点首页和各层书卡上展示的完成度，与真实馆藏状态终于进一步对齐。
+
+### 二、当前三本核心馆藏规模
+
+按章节 frontmatter 中的 `wordCount` 统计，当前完整正文规模约为：
+
+- 《红楼梦》前 `120` 回：`839212`
+- 《三国演义》前 `120` 回：`577879`
+- 《西游记》全 `100` 回：`695262`
+
+也就是说，三本主力长篇当前合计已经超过 `211` 万字，核心馆藏已经能稳定承担整本深读。
+
+### 三、当前站内真实馆藏规模
+
+按 `src/content/chapters` 现有章节 frontmatter 统计，当前站内真实已整理规模约为：
+
+- 已收录书籍：`20` 本
+- 已整理章节：`744` 章
+- 已整理正文：`6030048` 字
+
+也就是说，站内当前真实可读内容已经超过 `603` 万字，已经越来越像一座能长期使用、也能整本带走 EPUB 的小型免费读书馆。
+
+### 四、这轮完整验证结果
+
+- `bun run test`
+  - `93` 个测试全部通过
+- `bun run build`
+  - Astro 构建成功
+  - 产物页数：`807` pages
+- `bun run build:verify`
+  - 构建验证：`2584` 项检查全部通过
+
+本轮新增或增强的关键测试卡口包括：
+
+- `tests/library-collection.test.ts`
+  - 锁定全本收齐后会返回 `已全本收录，可直接从头读到完结`
+  - 锁定未收齐时不会误报全本可读
+- `tests/library-data.test.ts`
+  - 锁定《红楼梦》《三国演义》至少到前 `120` 回
+  - 锁定核心三本真实完成度提升到 `L4`
+- `tests/build-verify.ts`
+  - 锁定 `/book/hongloumeng.html` 出现全本可读提示
+  - 锁定 `/book/hongloumeng/001.html` 出现 `可直接从当前章一路读到完结`
+  - 锁定首页和“我的阅读”页出现全本可读提示
+  - 锁定 `/book/hongloumeng/120.html` 与 `/book/sanguoyanyi/120.html` 成功生成
+
+同时确认：
+
+- `dist` 已成功生成《红楼梦》《三国演义》前 `120` 回章节页
+- 核心三本 EPUB 产物继续可构建：
+  - `/epub/hongloumeng.epub`
+  - `/epub/sanguoyanyi.epub`
+  - `/epub/xiyouji.epub`
+
+### 五、这轮收口后的状态
+
+到这里为止，这一批“红楼梦 / 三国演义补齐全 `120` 回 + 全本可读状态外显 + 核心三本升到 `L4`”已经完成本地验证，可以直接进入提交、推送与部署观察阶段。

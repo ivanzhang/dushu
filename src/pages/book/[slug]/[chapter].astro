@@ -7,6 +7,7 @@ import ChapterNav from '../../../components/ChapterNav.astro';
 import ChapterQuickNav from '../../../components/ChapterQuickNav.astro';
 import {
   getBookCollectionStats,
+  getBookCollectionStatusText,
   getChapterBookIdsForBook,
   normalizeChapterBookSlug,
 } from '../../../lib/library';
@@ -74,6 +75,10 @@ const nextSlug = nextChapter
   : undefined;
 
 const totalChapters = bookChapters.length;
+const bookCollectionStatusText = getBookCollectionStatusText(
+  bookCollectionStats,
+  bookChapterCount || totalChapters,
+);
 const currentChapterNumber = chapter.data.chapterNumber;
 const chapterQuickNavItems = bookChapters.map((item) => ({
   slug: item.id.split('/').pop()!,
@@ -114,6 +119,7 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
       totalChapterCount={bookChapterCount || totalChapters}
       latestChapterNumber={bookCollectionStats.latestChapterNumber}
       continuousChapterCount={bookCollectionStats.continuousChapterCount}
+      collectionStatusText={bookCollectionStatusText}
     />
 
     <ChapterQuickNav

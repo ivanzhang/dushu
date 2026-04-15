@@ -37,7 +37,7 @@ const worldlyBooks = pickBooksByCategory(sortedBooks, 'worldly-novels');
 const proseBooks = pickBooksByCategory(sortedBooks, 'classical-prose');
 const recentBooks = [...sortedBooks].reverse().slice(0, 3);
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(sortedBooks);
-const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(sortedBooks, chapters);
+const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(sortedBooks, chapters);
 const collectionStats = getLibraryCollectionStats(sortedBooks, chapters);
 const coreProgressBooks = pickPlannedBooks(sortedBooks, ['hongloumeng', 'sanguoyanyi', 'xiyouji'])
   .map((book) => ({
@@ -128,6 +128,9 @@ const strongestCoreDepth = Math.max(
                 : `${stats.collectedWordCount} 字`}
               。
             </p>
+            {collectionStatusMap[book.id] && (
+              <p class="guide-card-meta">{collectionStatusMap[book.id]}</p>
+            )}
             <div class="core-progress-actions">
               <a href={`/book/${book.id}`} class="btn btn-secondary guide-card-link">看书页</a>
               <a href={buildEpubDownloadPath(book.id)} class="btn btn-secondary guide-card-link" download>下 EPUB</a>
@@ -211,6 +214,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="馆长推荐书架正在整理中。"
@@ -224,6 +228,7 @@ const strongestCoreDepth = Math.max(
       showCompletion={true}
       tierLabelMap={tierLabelMap}
       completionLevelMap={completionLevelMap}
+      collectionStatusMap={collectionStatusMap}
       collectionProgressMap={collectionProgressMap}
       collectionDepthMap={collectionDepthMap}
       emptyText="名著必读书架正在补书。"
@@ -237,6 +242,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="历史演义分馆正在继续补书。"
@@ -249,6 +255,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="志怪传奇书架正在补齐《聊斋志异》等重点馆藏。"
@@ -261,6 +268,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="世情小说书架会随着《金瓶梅》《儒林外史》一起扩进来。"
@@ -273,6 +281,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="古文入门区将由《古文观止》率先补齐。"
@@ -285,6 +294,7 @@ const strongestCoreDepth = Math.max(
     showCompletion={true}
     tierLabelMap={tierLabelMap}
     completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
     collectionProgressMap={collectionProgressMap}
     collectionDepthMap={collectionDepthMap}
     emptyText="最近入藏书架正在更新。"

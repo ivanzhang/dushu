@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getBookCollectionStats,
+  getBookCollectionStatusText,
   getLibraryCollectionStats,
 } from '../src/lib/library';
 
@@ -48,5 +49,23 @@ describe('library collection stats', () => {
     expect(stats.booksWithChapters).toBe(2);
     expect(stats.collectedChapterCount).toBe(3);
     expect(stats.collectedWordCount).toBe(3000);
+  });
+
+  it('整本章节已经收齐时，会返回全本可读提示', () => {
+    expect(getBookCollectionStatusText({
+      collectedChapterCount: 120,
+      continuousChapterCount: 120,
+      latestChapterNumber: 120,
+      collectedWordCount: 700000,
+    }, 120)).toBe('已全本收录，可直接从头读到完结');
+  });
+
+  it('未收齐全本时，不应误报全本可读', () => {
+    expect(getBookCollectionStatusText({
+      collectedChapterCount: 100,
+      continuousChapterCount: 100,
+      latestChapterNumber: 100,
+      collectedWordCount: 500000,
+    }, 120)).toBeUndefined();
   });
 });

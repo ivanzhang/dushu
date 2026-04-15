@@ -7,6 +7,7 @@ import BookCard from '../../../components/BookCard.astro';
 import {
   buildBookCollectionMaps,
   getBookCollectionStats,
+  getBookCollectionStatusText,
   getBookLibraryState,
   getBookTopicEntries,
   getChapterBookIdsForBook,
@@ -39,6 +40,7 @@ const collectionCoverageText = getCollectionCoverageText(
   bookChapters.length,
   data.chapterCount,
 );
+const bookCollectionStatusText = getBookCollectionStatusText(bookCollectionStats, data.chapterCount);
 const collectionDepthText = bookCollectionStats.latestChapterNumber > 0
   ? `当前已整理到第 ${bookCollectionStats.latestChapterNumber} 章，可连续读到第 ${bookCollectionStats.continuousChapterCount} 章。`
   : '本站还在整理这一部的正文章节。';
@@ -52,7 +54,7 @@ const firstChapterHref = bookChapters[0]
 // 推荐书籍
 const allBooks = await getCollection('books');
 const recommendations = getRecommendations(book, allBooks, 6);
-const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(recommendations, allChapters);
+const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(recommendations, allChapters);
 
 // 版权状态标签
 const copyrightLabels: Record<string, string> = {
@@ -147,6 +149,7 @@ const bookJsonLd = JSON.stringify({
           <div>
             <h2 class="section-title">收录进度</h2>
             <p class="book-progress-text">{collectionCoverageText}</p>
+            {bookCollectionStatusText && <p class="book-progress-note book-progress-strong">{bookCollectionStatusText}</p>}
             <p class="book-progress-note">{collectionDepthText}</p>
             <p class="book-progress-note">本站当前已整理正文约 {collectedWordsText}。</p>
           </div>
@@ -156,6 +159,7 @@ const bookJsonLd = JSON.stringify({
           bookSlug={book.id}
           bookTitle={data.title}
           firstChapterHref={firstChapterHref}
+          collectionStatusText={bookCollectionStatusText}
         />
 
         <!-- 分类标签 -->
@@ -255,6 +259,7 @@ const bookJsonLd = JSON.stringify({
               status={rec.data.status}
               wordCount={rec.data.wordCount}
               summary={rec.data.summary}
+              collectionStatusText={collectionStatusMap[rec.id]}
               collectionProgressText={collectionProgressMap[rec.id]}
               collectionDepthText={collectionDepthMap[rec.id]}
             />
@@ -334,6 +339,11 @@ const bookJsonLd = JSON.stringify({
     margin: 0.45rem 0 0;
     color: var(--ink-500);
     line-height: 1.7;
+  }
+
+  .book-progress-strong {
+    color: var(--accent-600);
+    font-weight: 600;
   }
 
   /* 侧边栏 */
