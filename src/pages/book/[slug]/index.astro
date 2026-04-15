@@ -194,17 +194,27 @@ const bookJsonLd = JSON.stringify({
         )}
 
         <!-- 章节目录 -->
-        <section class="chapter-catalog-section">
+        <section class="chapter-catalog-section" data-book-catalog data-book-slug={book.id}>
           <h2 class="section-title">章节目录</h2>
+          <p class="chapter-catalog-note">
+            章节目录会标出上次读到和已存书签的位置，回来时不必重新找。
+          </p>
           {bookChapters.length > 0 ? (
             <ol class="chapter-list">
               {bookChapters.map((ch) => {
                 const chapterFileSlug = ch.id.split('/').pop()!;
                 return (
-                  <li class="chapter-list-item">
+                  <li
+                    class="chapter-list-item"
+                    data-chapter-catalog-item
+                    data-chapter-slug={chapterFileSlug}
+                  >
                     <a href={`/book/${book.id}/${chapterFileSlug}`} class="chapter-link">
                       <span class="chapter-num">第 {ch.data.chapterNumber} 章</span>
-                      <span class="chapter-title-text">{ch.data.title}</span>
+                      <span class="chapter-title-wrap">
+                        <span class="chapter-title-text">{ch.data.title}</span>
+                        <span class="chapter-marker-list" data-chapter-marker-list></span>
+                      </span>
                       <span class="chapter-words">{ch.data.wordCount} 字</span>
                     </a>
                   </li>
@@ -254,6 +264,62 @@ const bookJsonLd = JSON.stringify({
     )}
   </div>
 </Base>
+
+<script>
+  import {
+    READER_STORAGE_KEY,
+    getBookCatalogMarkers,
+    parseReaderState,
+  } from '../../../lib/reader-state';
+
+  const catalogRoot = document.querySelector<HTMLElement>('[data-book-catalog]');
+
+  if (catalogRoot) {
+    const bookSlug = catalogRoot.dataset.bookSlug ?? '';
+
+    function createMarker(text: string, kind: 'progress' | 'bookmark') {
+      const marker = document.createElement('span');
+      marker.className = `chapter-marker-badge ${kind}`;
+      marker.textContent = text;
+      return marker;
+    }
+
+    function renderCatalogMarkers() {
+      const state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const markers = getBookCatalogMarkers(state, bookSlug);
+      const bookmarkSet = new Set(markers.bookmarkChapterSlugs);
+
+      catalogRoot.querySelectorAll<HTMLElement>('[data-chapter-catalog-item]').forEach((item) => {
+        const chapterSlug = item.dataset.chapterSlug ?? '';
+        const markerList = item.querySelector<HTMLElement>('[data-chapter-marker-list]');
+
+        item.classList.remove('has-progress-marker', 'has-bookmark-marker');
+        markerList?.replaceChildren();
+
+        if (!chapterSlug || !markerList) {
+          return;
+        }
+
+        if (markers.lastProgressChapterSlug === chapterSlug) {
+          item.classList.add('has-progress-marker');
+          markerList.append(createMarker('上次读到', 'progress'));
+        }
+
+        if (bookmarkSet.has(chapterSlug)) {
+          item.classList.add('has-bookmark-marker');
+          markerList.append(createMarker('已存书签', 'bookmark'));
+        }
+      });
+    }
+
+    renderCatalogMarkers();
+    window.addEventListener('storage', (event) => {
+      if (event.key === READER_STORAGE_KEY) {
+        renderCatalogMarkers();
+      }
+    });
+  }
+</script>
 
 <style>
   .book-detail-layout {
@@ -371,6 +437,12 @@ const bookJsonLd = JSON.stringify({
     margin-bottom: 2.5rem;
   }
 
+  .chapter-catalog-note {
+    margin: 0.35rem 0 1rem;
+    color: var(--ink-500);
+    line-height: 1.7;
+  }
+
   .book-summary-text {
     line-height: 1.85;
     color: var(--color-text);
@@ -412,11 +484,51 @@ const bookJsonLd = JSON.stringify({
     min-width: 4.5em;
   }
 
-  .chapter-title-text {
+  .chapter-title-wrap {
     flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.32rem;
+  }
+
+  .chapter-title-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .chapter-marker-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chapter-marker-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .chapter-marker-badge.progress {
+    background: rgba(31, 127, 123, 0.12);
+    color: #1f6f6b;
+  }
+
+  .chapter-marker-badge.bookmark {
+    background: rgba(204, 92, 47, 0.12);
+    color: #a34a25;
+  }
+
+  .chapter-list-item.has-progress-marker {
+    background: rgba(31, 127, 123, 0.035);
+  }
+
+  .chapter-list-item.has-bookmark-marker {
+    background: linear-gradient(90deg, rgba(204, 92, 47, 0.04), rgba(255, 255, 255, 0));
   }
 
   .chapter-words {
@@ -455,6 +567,14 @@ const bookJsonLd = JSON.stringify({
 
     .book-progress-card {
       grid-template-columns: 1fr;
+    }
+
+    .chapter-link {
+      align-items: flex-start;
+    }
+
+    .chapter-title-text {
+      white-space: normal;
     }
   }
 </style>

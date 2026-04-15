@@ -211,6 +211,19 @@ export function getBookReadingSnapshot(state: ReaderState, bookSlug: string) {
   };
 }
 
+// 生成书页目录所需的阅读标记，方便把“上次读到”和“已存书签”直接标在章节目录里。
+// 使用示例：
+// const markers = getBookCatalogMarkers(state, 'hongloumeng');
+export function getBookCatalogMarkers(state: ReaderState, bookSlug: string) {
+  const snapshot = getBookReadingSnapshot(state, bookSlug);
+
+  return {
+    lastProgressChapterSlug: snapshot.progress?.chapterSlug,
+    lastProgressChapterNumber: snapshot.progress?.chapterNumber,
+    bookmarkChapterSlugs: snapshot.bookmarks.map((item) => item.chapterSlug),
+  };
+}
+
 // 生成“我的阅读”页所需的聚合快照，集中展示在读、书签与历史。
 // 使用示例：
 // const dashboard = getReadingDashboardSnapshot(state);

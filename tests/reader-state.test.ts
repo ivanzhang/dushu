@@ -3,6 +3,7 @@ import * as readerState from '../src/lib/reader-state';
 import {
   MAX_READER_HISTORY,
   createDefaultReaderState,
+  getBookCatalogMarkers,
   getBookReadingSnapshot,
   parseReaderState,
   patchReaderSettings,
@@ -189,6 +190,56 @@ describe('reader state helpers', () => {
     expect(snapshot.history).toHaveLength(1);
     expect(snapshot.bookmarks).toHaveLength(1);
     expect(snapshot.history[0]?.bookSlug).toBe('hongloumeng');
+  });
+
+  it('书页目录标记会返回当前书的上次进度章节和书签章节', () => {
+    let state = createDefaultReaderState();
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.64,
+      updatedAt: 1713000000000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.21,
+      createdAt: 1713000001000,
+    }).state;
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.64,
+      createdAt: 1713000002000,
+    }).state;
+
+    state = toggleBookmark(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '002',
+      chapterTitle: '张翼德怒鞭督邮',
+      chapterNumber: 2,
+      progress: 0.3,
+      createdAt: 1713000003000,
+    }).state;
+
+    const markers = getBookCatalogMarkers(state, 'hongloumeng');
+
+    expect(markers.lastProgressChapterSlug).toBe('008');
+    expect(markers.lastProgressChapterNumber).toBe(8);
+    expect(markers.bookmarkChapterSlugs).toEqual(['008', '003']);
   });
 
   it('强制落盘时如果测得进度异常回退，不应覆盖掉已有阅读进度', () => {
