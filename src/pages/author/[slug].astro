@@ -4,6 +4,7 @@ import CuratedShelf from '../../components/CuratedShelf.astro';
 import BookCard from '../../components/BookCard.astro';
 import Base from '../../layouts/Base.astro';
 import {
+  buildBookCollectionMaps,
   buildBookDisplayMaps,
   categoryNameToRouteSlug,
   getAuthorProfileBySlug,
@@ -41,6 +42,7 @@ interface Props {
 const { slug } = Astro.params;
 const { authorName, dynasty } = Astro.props;
 const allBooks = await getCollection('books');
+const allChapters = await getCollection('chapters');
 const authorBooks = sortBooksByPlan(
   allBooks.filter((book) => book.data.authorSlug === slug),
 );
@@ -52,6 +54,7 @@ const showcaseBooks = recommendedBooks.length > 0
   ? recommendedBooks
   : authorBooks.slice(0, 3);
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(authorBooks);
+const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(authorBooks, allChapters);
 const entryBook = authorProfile?.entryBookSlug
   ? authorBooks.find((book) => book.id === authorProfile.entryBookSlug)
   : showcaseBooks[0];
@@ -125,6 +128,8 @@ const relatedTopics = (authorProfile?.relatedTopicSlugs ?? [])
       showCompletion={true}
       tierLabelMap={tierLabelMap}
       completionLevelMap={completionLevelMap}
+      collectionProgressMap={collectionProgressMap}
+      collectionDepthMap={collectionDepthMap}
       emptyText="代表作品正在整理中。"
     />
 
@@ -204,6 +209,8 @@ const relatedTopics = (authorProfile?.relatedTopicSlugs ?? [])
               summary={book.data.summary}
               tierLabel={tierLabelMap[book.id]}
               completionLevel={completionLevelMap[book.id]}
+              collectionProgressText={collectionProgressMap[book.id]}
+              collectionDepthText={collectionDepthMap[book.id]}
             />
           ))}
         </div>

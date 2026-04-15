@@ -30,6 +30,8 @@ interface Props {
   emptyText?: string;
   tierLabelMap?: Record<string, string>;
   completionLevelMap?: Record<string, 'L1' | 'L2' | 'L3' | 'L4'>;
+  collectionProgressMap?: Record<string, string>;
+  collectionDepthMap?: Record<string, string>;
 }
 
 const {
@@ -40,6 +42,8 @@ const {
   emptyText = '该书架正在补充中。',
   tierLabelMap = {},
   completionLevelMap = {},
+  collectionProgressMap = {},
+  collectionDepthMap = {},
 } = Astro.props;
 ---
 
@@ -66,6 +70,8 @@ const {
             summary={book.data.summary}
             tierLabel={tierLabelMap[book.id]}
             completionLevel={showCompletion ? completionLevelMap[book.id] : undefined}
+            collectionProgressText={collectionProgressMap[book.id]}
+            collectionDepthText={collectionDepthMap[book.id]}
           />
         ))}
       </div>

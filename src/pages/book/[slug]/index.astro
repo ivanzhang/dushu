@@ -5,6 +5,7 @@ import CompletionBadge from '../../../components/CompletionBadge.astro';
 import Base from '../../../layouts/Base.astro';
 import BookCard from '../../../components/BookCard.astro';
 import {
+  buildBookCollectionMaps,
   getBookCollectionStats,
   getBookLibraryState,
   getBookTopicEntries,
@@ -51,6 +52,7 @@ const firstChapterHref = bookChapters[0]
 // 推荐书籍
 const allBooks = await getCollection('books');
 const recommendations = getRecommendations(book, allBooks, 6);
+const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(recommendations, allChapters);
 
 // 版权状态标签
 const copyrightLabels: Record<string, string> = {
@@ -243,6 +245,8 @@ const bookJsonLd = JSON.stringify({
               status={rec.data.status}
               wordCount={rec.data.wordCount}
               summary={rec.data.summary}
+              collectionProgressText={collectionProgressMap[rec.id]}
+              collectionDepthText={collectionDepthMap[rec.id]}
             />
           ))}
         </div>

@@ -17,6 +17,8 @@ interface Props {
   summary: string;
   tierLabel?: string;
   completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
+  collectionProgressText?: string;
+  collectionDepthText?: string;
 }
 
 const {
@@ -30,6 +32,8 @@ const {
   summary,
   tierLabel,
   completionLevel,
+  collectionProgressText,
+  collectionDepthText,
 } = Astro.props;
 
 /** 将字数格式化为"X 万字" */
@@ -80,8 +84,35 @@ const allTags = [...category, ...tags].slice(0, 4);
 
     <p class="book-summary-short">{summary}</p>
 
+    {(collectionProgressText || collectionDepthText) && (
+      <div class="book-collection-meta">
+        {collectionProgressText && <p class="book-collection-line">{collectionProgressText}</p>}
+        {collectionDepthText && <p class="book-collection-line">{collectionDepthText}</p>}
+      </div>
+    )}
+
     <div class="card-foot">
       <a href={href} class="btn btn-primary btn-sm">开始阅读</a>
     </div>
   </div>
 </article>
+
+<style>
+  .book-collection-meta {
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: 12px;
+    background: rgba(92, 46, 14, 0.06);
+  }
+
+  .book-collection-line {
+    margin: 0;
+    color: var(--ink-600);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .book-collection-line + .book-collection-line {
+    margin-top: 0.2rem;
+  }
+</style>

@@ -11,6 +11,7 @@ type MinimalBookEntry = {
   id: string;
   data?: {
     category?: string[];
+    chapterCount?: number;
     collectionTier?: LibraryTier;
     completionLevel?: CompletionLevel;
     featuredTopics?: string[];
@@ -255,6 +256,32 @@ export function getCollectionCoverageText(
 
   const percent = Math.round((collectedChapterCount / totalChapterCount) * 100);
   return `${collectedChapterCount} / ${totalChapterCount} 章 · ${percent}%`;
+}
+
+// 批量生成书卡展示所需的真实整理进度文案。
+// 使用示例：
+// const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(books, chapters);
+export function buildBookCollectionMaps<
+  TBook extends MinimalBookEntry,
+  TChapter extends MinimalChapterEntry,
+>(books: TBook[], chapters: TChapter[]) {
+  const collectionProgressMap: Record<string, string> = {};
+  const collectionDepthMap: Record<string, string> = {};
+
+  for (const book of books) {
+    const stats = getBookCollectionStats(book.id, chapters);
+    if (stats.latestChapterNumber <= 0) {
+      continue;
+    }
+
+    const totalChapterCount = book.data?.chapterCount ?? 0;
+    collectionProgressMap[book.id] = totalChapterCount > 0
+      ? `已整理到第 ${stats.latestChapterNumber} 章 / 共 ${totalChapterCount} 章`
+      : `已整理到第 ${stats.latestChapterNumber} 章`;
+    collectionDepthMap[book.id] = `可连读到第 ${stats.continuousChapterCount} 章`;
+  }
+
+  return { collectionProgressMap, collectionDepthMap };
 }
 
 // 统计单本书当前真实已整理的章节规模。

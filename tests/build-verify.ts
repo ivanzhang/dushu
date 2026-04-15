@@ -131,6 +131,8 @@ check(indexHtml.includes('馆藏地图'), '首页缺少 馆藏地图');
 check(indexHtml.includes('已整理章节'), '首页缺少 已整理章节 统计');
 check(indexHtml.includes('已整理正文'), '首页缺少 已整理正文 统计');
 check(indexHtml.includes('核心馆藏进展'), '首页缺少 核心馆藏进展 模块');
+check(indexHtml.includes('已整理到第'), '首页书架卡片缺少 已整理到第 文案');
+check(indexHtml.includes('可连读到第'), '首页书架卡片缺少 可连读到第 文案');
 
 const readingHtml = readFileSync(join(DIST, 'reading.html'), 'utf-8');
 check(readingHtml.includes('我的阅读'), '我的阅读页缺少 我的阅读 标题');
@@ -152,6 +154,8 @@ check(worldlyHallHtml.includes('阅读建议'), '分类页缺少 阅读建议');
 check(worldlyHallHtml.includes('适合谁读'), '分类页缺少 适合谁读');
 check(worldlyHallHtml.includes('入馆路线'), '分类页缺少 入馆路线');
 check(worldlyHallHtml.includes('邻馆串逛'), '分类页缺少 邻馆串逛');
+check(worldlyHallHtml.includes('已整理到第'), '分类页书卡缺少 已整理到第 文案');
+check(worldlyHallHtml.includes('可连读到第'), '分类页书卡缺少 可连读到第 文案');
 
 // 作者页需要升级成作者展架页
 const authorHtml = readFileSync(join(DIST, 'author', 'caoxueqin.html'), 'utf-8');
@@ -161,6 +165,8 @@ check(authorHtml.includes('馆内定位'), '作者页缺少 馆内定位');
 check(authorHtml.includes('气质标签'), '作者页缺少 气质标签');
 check(authorHtml.includes('从哪本开始'), '作者页缺少 从哪本开始');
 check(authorHtml.includes('顺手再逛'), '作者页缺少 顺手再逛');
+check(authorHtml.includes('已整理到第'), '作者页书卡缺少 已整理到第 文案');
+check(authorHtml.includes('可连读到第'), '作者页书卡缺少 可连读到第 文案');
 
 const fengmenglongHtml = readFileSync(join(DIST, 'author', 'fengmenglong.html'), 'utf-8');
 check(!fengmenglongHtml.includes('正在整理中'), '冯梦龙作者页仍在使用兜底文案');
@@ -173,6 +179,8 @@ const topicHtml = readFileSync(join(DIST, 'topic', 'four-masterpieces.html'), 'u
 check(topicHtml.includes('策展缘起'), '专题页缺少 策展缘起');
 check(topicHtml.includes('阅读路线'), '专题页缺少 阅读路线');
 check(topicHtml.includes('相关分馆'), '专题页缺少 相关分馆');
+check(topicHtml.includes('已整理到第'), '专题页书卡缺少 已整理到第 文案');
+check(topicHtml.includes('可连读到第'), '专题页书卡缺少 可连读到第 文案');
 check(existsSync(join(DIST, 'topic', 'three-yans.html')), '缺少专题页: 三言话本');
 
 if (existsSync(join(DIST, 'topic', 'three-yans.html'))) {
