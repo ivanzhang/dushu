@@ -40,6 +40,7 @@ for (const file of htmlFiles) {
   const rel = file.replace(DIST, '');
   check(/<title>.+<\/title>/.test(content), `${rel} 缺少 <title>`);
   check(/<meta\s+name="description"/.test(content), `${rel} 缺少 <meta name="description">`);
+  check(!content.includes('mochao.example.com'), `${rel} 仍包含错误线上域名 mochao.example.com`);
 }
 
 // 书籍详情页有 Book JSON-LD
@@ -63,6 +64,7 @@ check(readerBookHtml.includes('继续阅读'), '/book/hongloumeng.html 缺少 �
 check(readerBookHtml.includes('最近阅读'), '/book/hongloumeng.html 缺少 最近阅读 模块');
 check(readerBookHtml.includes('我的书签'), '/book/hongloumeng.html 缺少 我的书签 模块');
 check(readerBookHtml.includes('下载 EPUB'), '/book/hongloumeng.html 缺少 下载 EPUB 入口');
+check(readerBookHtml.includes('https://dushu.my/book/hongloumeng'), '/book/hongloumeng.html canonical 未指向 https://dushu.my');
 
 // 章节页需要具备阅读设置、书签和历史入口
 const readerChapterHtml = readFileSync(join(DIST, 'book', 'hongloumeng', '001.html'), 'utf-8');

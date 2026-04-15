@@ -1816,3 +1816,75 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
   - 产物页数：`557` pages
 - `bun run build:verify`
   - 构建验证：`1225` 项检查全部通过
+
+## 2026-04-15 续记（正式域名修正 + 三大名著扩到 40 回）
+
+- 记录时间：2026-04-15
+- 记录目的：把线上正式域名彻底收口到 `https://dushu.my`，同时继续扩充三本核心馆藏的可连读深度，为直接部署上线做最后一轮收口。
+
+### 一、今天收口的两件事
+
+#### 1. 修正正式站点 canonical / Open Graph 域名
+
+- `astro.config.ts`
+  - 已把 `site` 从历史占位域名改为 `https://dushu.my`
+  - 后续构建出的 canonical、Open Graph URL 与 `Astro.url` 都会回到正式域名
+- `tests/build-verify.ts`
+  - 新增校验：所有 HTML 产物不允许再出现 `mochao.example.com`
+  - 新增校验：`/book/hongloumeng.html` 的 canonical 必须指向 `https://dushu.my`
+
+这一步完成后，正式站点的 SEO 基础地址已与线上真实域名一致，不再把错误域名带到搜索引擎与分享卡片里。
+
+#### 2. 三本核心馆藏继续扩到前 40 回
+
+本轮已新增以下章节文件：
+
+- `src/content/chapters/hongloumeng/031.md` - `040.md`
+- `src/content/chapters/sanguoyanyi/031.md` - `040.md`
+- `src/content/chapters/xiyouji/031.md` - `040.md`
+
+对应结果：
+
+- 《红楼梦》：已可连续阅读前 `40` 回
+- 《三国演义》：已可连续阅读前 `40` 回
+- 《西游记》：已可连续阅读前 `40` 回
+
+相关书页、章节页、目录跳转与 EPUB 构建也都已自动覆盖到这批新增内容。
+
+### 二、当前三本核心馆藏规模
+
+按章节 frontmatter 中的 `wordCount` 统计，当前前 `40` 回累计正文规模约为：
+
+- 《红楼梦》：`249553`
+- 《三国演义》：`185042`
+- 《西游记》：`268447`
+
+这三本已经能支撑一个“小型免费读书馆”的核心长篇阅读入口，读者可以直接连续阅读、保存进度、保存书签，并下载整本 EPUB。
+
+### 三、今天这轮完整验证结果
+
+- `bun run test`
+  - `78` 个测试全部通过
+- `bun run build`
+  - Astro 构建成功
+  - 产物页数：`587` pages
+- `bun run build:verify`
+  - 构建验证：`1783` 项检查全部通过
+
+同时确认：
+
+- `dist` 产物里不再残留 `mochao.example.com`
+- `hongloumeng / sanguoyanyi / xiyouji` 均已生成到前 `40` 回对应章节页
+- 三本 EPUB 产物继续可构建：
+  - `/epub/hongloumeng.epub`
+  - `/epub/sanguoyanyi.epub`
+  - `/epub/xiyouji.epub`
+
+### 四、这轮收口后的上线状态
+
+到这里为止，这一批“正式域名修正 + 三本核心馆藏扩容”已经具备直接提交并推送部署的条件。
+
+如果下一轮继续沿当前方向自动推进，最顺手的内容目标会是：
+
+1. 把三本核心馆藏继续补到前 `50` 回
+2. 顺手增强首页 / 书页上的“已收录进度”提示，让读者更容易感知馆藏深度
