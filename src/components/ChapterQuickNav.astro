@@ -44,7 +44,7 @@ const visibleChapters = chapters.slice(startIndex, endIndex);
 const overviewHref = `/book/${bookSlug}`;
 ---
 
-<section class="reading-guide-card chapter-quick-nav" data-chapter-quick-nav>
+<section class="reading-guide-card chapter-quick-nav" data-chapter-quick-nav data-book-slug={bookSlug}>
   <div class="chapter-quick-nav-head">
     <div>
       <h2 class="section-title">本书目录速览</h2>
@@ -74,7 +74,7 @@ const overviewHref = `/book/${bookSlug}`;
     </label>
 
     <p class="chapter-jump-note">
-      当前展示目录速览窗口；若想跨得更远，可直接用上面的下拉框跳到任意章节。
+      当前展示目录速览窗口；目录速览也会标出上次读到和已存书签。若想跨得更远，可直接用上面的下拉框跳到任意章节。
     </p>
   </div>
 
@@ -84,17 +84,27 @@ const overviewHref = `/book/${bookSlug}`;
       const isCurrent = item.slug === currentChapterSlug;
 
       return (
-        <li class={`chapter-quick-item${isCurrent ? ' active' : ''}`}>
+        <li
+          class={`chapter-quick-item${isCurrent ? ' active' : ''}`}
+          data-chapter-quick-item
+          data-chapter-slug={item.slug}
+        >
           {isCurrent ? (
             <span class="chapter-quick-link" aria-current="page">
               <span class="chapter-quick-number">第 {item.chapterNumber} 章</span>
-              <span class="chapter-quick-title">{item.title}</span>
+              <span class="chapter-quick-main">
+                <span class="chapter-quick-title">{item.title}</span>
+                <span class="chapter-marker-list" data-chapter-marker-list></span>
+              </span>
               <span class="chapter-quick-state">当前阅读</span>
             </span>
           ) : (
             <a href={href} class="chapter-quick-link">
               <span class="chapter-quick-number">第 {item.chapterNumber} 章</span>
-              <span class="chapter-quick-title">{item.title}</span>
+              <span class="chapter-quick-main">
+                <span class="chapter-quick-title">{item.title}</span>
+                <span class="chapter-marker-list" data-chapter-marker-list></span>
+              </span>
               <span class="chapter-quick-state">跳到这里</span>
             </a>
           )}
@@ -105,14 +115,67 @@ const overviewHref = `/book/${bookSlug}`;
 </section>
 
 <script>
-  const chapterJump = document.querySelector<HTMLSelectElement>('[data-chapter-jump]');
+  import {
+    READER_STORAGE_KEY,
+    getBookCatalogMarkers,
+    parseReaderState,
+  } from '../lib/reader-state';
 
-  if (chapterJump) {
-    // 下拉选择后立刻跳到目标章节，减少回目录再找章节的操作成本。
-    chapterJump.addEventListener('change', () => {
-      const target = chapterJump.value;
-      if (target) {
-        window.location.href = target;
+  const root = document.querySelector<HTMLElement>('[data-chapter-quick-nav]');
+
+  if (root) {
+    const chapterJump = root.querySelector<HTMLSelectElement>('[data-chapter-jump]');
+    const bookSlug = root.dataset.bookSlug ?? '';
+
+    function createMarker(text: string, kind: 'progress' | 'bookmark') {
+      const marker = document.createElement('span');
+      marker.className = `chapter-marker-badge ${kind}`;
+      marker.textContent = text;
+      return marker;
+    }
+
+    function renderQuickNavMarkers() {
+      const state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const markers = getBookCatalogMarkers(state, bookSlug);
+      const bookmarkSet = new Set(markers.bookmarkChapterSlugs);
+
+      root.querySelectorAll<HTMLElement>('[data-chapter-quick-item]').forEach((item) => {
+        const chapterSlug = item.dataset.chapterSlug ?? '';
+        const markerList = item.querySelector<HTMLElement>('[data-chapter-marker-list]');
+
+        item.classList.remove('has-progress-marker', 'has-bookmark-marker');
+        markerList?.replaceChildren();
+
+        if (!chapterSlug || !markerList) {
+          return;
+        }
+
+        if (markers.lastProgressChapterSlug === chapterSlug) {
+          item.classList.add('has-progress-marker');
+          markerList.append(createMarker('上次读到', 'progress'));
+        }
+
+        if (bookmarkSet.has(chapterSlug)) {
+          item.classList.add('has-bookmark-marker');
+          markerList.append(createMarker('已存书签', 'bookmark'));
+        }
+      });
+    }
+
+    if (chapterJump) {
+      // 下拉选择后立刻跳到目标章节，减少回目录再找章节的操作成本。
+      chapterJump.addEventListener('change', () => {
+        const target = chapterJump.value;
+        if (target) {
+          window.location.href = target;
+        }
+      });
+    }
+
+    renderQuickNavMarkers();
+    window.addEventListener('storage', (event) => {
+      if (event.key === READER_STORAGE_KEY) {
+        renderQuickNavMarkers();
       }
     });
   }
@@ -214,6 +277,38 @@ const overviewHref = `/book/${bookSlug}`;
     line-height: 1.65;
   }
 
+  .chapter-quick-main {
+    min-width: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .chapter-marker-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chapter-marker-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .chapter-marker-badge.progress {
+    background: rgba(31, 127, 123, 0.12);
+    color: #1f6f6b;
+  }
+
+  .chapter-marker-badge.bookmark {
+    background: rgba(204, 92, 47, 0.12);
+    color: #a34a25;
+  }
+
   .chapter-quick-number,
   .chapter-quick-state {
     color: var(--ink-500);
@@ -224,6 +319,14 @@ const overviewHref = `/book/${bookSlug}`;
   .chapter-quick-item.active .chapter-quick-state {
     color: var(--accent-600);
     font-weight: 700;
+  }
+
+  .chapter-quick-item.has-progress-marker {
+    border-color: rgba(31, 127, 123, 0.22);
+  }
+
+  .chapter-quick-item.has-bookmark-marker {
+    box-shadow: inset 0 0 0 1px rgba(204, 92, 47, 0.1);
   }
 
   @media (max-width: 840px) {
