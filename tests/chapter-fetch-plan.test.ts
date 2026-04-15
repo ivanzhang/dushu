@@ -238,4 +238,24 @@ describe('chapter fetch helpers', () => {
 
     expect(extractTitleFromWikitext(raw)).toBe('第四回 官封弼馬心何足　名注齊天意未寧');
   });
+
+  it('能清理西游记回目里的异文模板，避免标题残留维基标记', () => {
+    const raw = `{{header
+| title   = 西遊記
+| section = 第六十一回 豬八戒助力{{另|破|敗}}魔王　孫行者三調芭蕉扇
+| notes   =
+}}`;
+
+    expect(extractTitleFromWikitext(raw)).toBe('第六十一回 豬八戒助力破魔王　孫行者三調芭蕉扇');
+  });
+
+  it('能清理西游记回目里的參模板，避免 Unicode 缺字提示混入标题', () => {
+    const raw = `{{header
+| title   = 西遊記
+| section = 第五十二回 悟空大鬧金{{參|兜|本作“⿰山兜”，Unicode缺字}}洞　如來暗示主人公
+| notes   =
+}}`;
+
+    expect(extractTitleFromWikitext(raw)).toBe('第五十二回 悟空大鬧金兜洞　如來暗示主人公');
+  });
 });

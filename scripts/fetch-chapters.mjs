@@ -86,8 +86,18 @@ function stripNestedTemplates(input) {
   return output;
 }
 
+// 清理标题行里的少量维基模板，只保留最终给读者看的正文字符。
+// 使用示例：
+// normalizeTitleTemplates('第六十一回 豬八戒助力{{另|破|敗}}魔王')
+// => '第六十一回 豬八戒助力破魔王'
+function normalizeTitleTemplates(input) {
+  return input
+    .replace(/\{\{\s*另\s*\|([^|{}]+)\|[^{}]*\}\}/g, '$1')
+    .replace(/\{\{\s*參\s*\|([^|{}]+)\|[^{}]*\}\}/g, '$1');
+}
+
 function normalizeExtractedLine(line) {
-  return line
+  return normalizeTitleTemplates(line)
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/-\{([^}]+)\}-/g, '$1')
     .replace(/'''/g, '')

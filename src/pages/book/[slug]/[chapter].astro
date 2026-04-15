@@ -2,9 +2,11 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import ReaderControls from '../../../components/ReaderControls.astro';
+import ChapterReaderHub from '../../../components/ChapterReaderHub.astro';
 import ChapterNav from '../../../components/ChapterNav.astro';
 import ChapterQuickNav from '../../../components/ChapterQuickNav.astro';
 import {
+  getBookCollectionStats,
   getChapterBookIdsForBook,
   normalizeChapterBookSlug,
 } from '../../../lib/library';
@@ -23,7 +25,11 @@ export async function getStaticPaths() {
 
     return {
       params: { slug: bookSlug, chapter: chapterFileSlug },
-      props: { chapter: ch, bookTitle: book?.data.title ?? bookSlug },
+      props: {
+        chapter: ch,
+        bookTitle: book?.data.title ?? bookSlug,
+        bookChapterCount: book?.data.chapterCount ?? 0,
+      },
     };
   });
 }
@@ -31,9 +37,10 @@ export async function getStaticPaths() {
 interface Props {
   chapter: Awaited<ReturnType<typeof getCollection<'chapters'>>>[number];
   bookTitle: string;
+  bookChapterCount: number;
 }
 
-const { chapter, bookTitle } = Astro.props;
+const { chapter, bookTitle, bookChapterCount } = Astro.props;
 const { slug: bookSlug, chapter: chapterFileSlug } = Astro.params;
 const canonicalBookSlug = normalizeChapterBookSlug(bookSlug ?? chapter.data.bookId);
 
@@ -46,6 +53,7 @@ const chapterAliases = getChapterBookIdsForBook(canonicalBookSlug);
 const bookChapters = allChapters
   .filter((ch) => chapterAliases.includes(ch.data.bookId))
   .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+const bookCollectionStats = getBookCollectionStats(canonicalBookSlug, allChapters);
 
 const currentIndex = bookChapters.findIndex((ch) => {
   const fileSlug = ch.id.split('/').pop()!;
@@ -97,6 +105,15 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
       chapterTitle={chapter.data.title}
       chapterNumber={currentChapterNumber}
       totalChapters={totalChapters}
+    />
+
+    <ChapterReaderHub
+      bookSlug={canonicalBookSlug}
+      bookTitle={bookTitle}
+      currentChapterNumber={currentChapterNumber}
+      totalChapterCount={bookChapterCount || totalChapters}
+      latestChapterNumber={bookCollectionStats.latestChapterNumber}
+      continuousChapterCount={bookCollectionStats.continuousChapterCount}
     />
 
     <ChapterQuickNav

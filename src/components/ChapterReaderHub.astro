@@ -1,0 +1,97 @@
+---
+/**
+ * ChapterReaderHub.astro
+ * 章节页快捷入口：回到书页、下载 EPUB、查看“我的阅读”，同时提示当前馆藏深度。
+ *
+ * 使用示例：
+ * <ChapterReaderHub
+ *   bookSlug="hongloumeng"
+ *   bookTitle="红楼梦"
+ *   currentChapterNumber={12}
+ *   totalChapterCount={120}
+ *   latestChapterNumber={70}
+ *   continuousChapterCount={70}
+ * />
+ */
+
+import { buildEpubDownloadPath } from '../lib/epub';
+
+interface Props {
+  bookSlug: string;
+  bookTitle: string;
+  currentChapterNumber: number;
+  totalChapterCount: number;
+  latestChapterNumber: number;
+  continuousChapterCount: number;
+}
+
+const {
+  bookSlug,
+  bookTitle,
+  currentChapterNumber,
+  totalChapterCount,
+  latestChapterNumber,
+  continuousChapterCount,
+} = Astro.props;
+
+const epubHref = buildEpubDownloadPath(bookSlug);
+---
+
+<section class="reading-guide-card chapter-reader-hub">
+  <div class="chapter-reader-hub-head">
+    <div>
+      <h2 class="section-title">本章快捷入口</h2>
+      <p class="book-progress-text">
+        现在读的是《{bookTitle}》第 {currentChapterNumber} 章；本站当前已整理到第 {latestChapterNumber} 章 / 共 {totalChapterCount} 章，可连续读到第 {continuousChapterCount} 章。
+      </p>
+    </div>
+
+    <div class="chapter-reader-hub-actions">
+      <a href={`/book/${bookSlug}`} class="btn btn-secondary btn-sm">回到书页</a>
+      <a href={epubHref} class="btn btn-secondary btn-sm" download>下载 EPUB</a>
+      <a href="/reading" class="btn btn-primary btn-sm">我的阅读</a>
+    </div>
+  </div>
+
+  <p class="chapter-reader-hub-note">
+    想切回目录、继续别的书，或者回看书签和历史，都可以从这里直接跳转。
+  </p>
+</section>
+
+<style>
+  .chapter-reader-hub {
+    margin-bottom: 1.5rem;
+  }
+
+  .chapter-reader-hub-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .chapter-reader-hub-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .chapter-reader-hub-note {
+    margin: 0.85rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 840px) {
+    .chapter-reader-hub-head {
+      flex-direction: column;
+    }
+
+    .chapter-reader-hub-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+</style>
