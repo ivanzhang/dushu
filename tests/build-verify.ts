@@ -86,6 +86,9 @@ for (const chapterPath of [
   ['hongloumeng', '070'],
   ['sanguoyanyi', '070'],
   ['xiyouji', '070'],
+  ['hongloumeng', '080'],
+  ['sanguoyanyi', '080'],
+  ['xiyouji', '080'],
 ] as const) {
   const [slug, chapter] = chapterPath;
   check(existsSync(join(DIST, 'book', slug, `${chapter}.html`)), `/book/${slug}/${chapter}.html 不存在`);
@@ -156,6 +159,10 @@ check(readingHtml.includes('我的阅读'), '我的阅读页缺少 我的阅读 
 check(readingHtml.includes('继续阅读中的书'), '我的阅读页缺少 继续阅读中的书 模块');
 check(readingHtml.includes('最近书签'), '我的阅读页缺少 最近书签 模块');
 check(readingHtml.includes('最近足迹'), '我的阅读页缺少 最近足迹 模块');
+check(readingHtml.includes('继续读馆藏更深的书'), '我的阅读页缺少 继续读馆藏更深的书 模块');
+check(readingHtml.includes('已整理到第'), '我的阅读页缺少 已整理到第 文案');
+check(readingHtml.includes('可连读到第'), '我的阅读页缺少 可连读到第 文案');
+check(readingHtml.includes('下载 EPUB'), '我的阅读页缺少 下载 EPUB 入口');
 
 // 分类页需要升级成分馆页
 const categoryIndexHtml = readFileSync(join(DIST, 'category.html'), 'utf-8');
@@ -208,6 +215,8 @@ if (existsSync(join(DIST, 'topic', 'three-yans.html'))) {
 
 const searchHtml = readFileSync(join(DIST, 'search.html'), 'utf-8');
 check(searchHtml.includes('分馆浏览') || searchHtml.includes('专题'), '搜索页缺少馆藏导览提示');
+check(searchHtml.includes('从我的阅读回来'), '搜索页缺少 从我的阅读回来');
+check(searchHtml.includes('回到我的阅读'), '搜索页缺少 回到我的阅读');
 check(searchHtml.includes('如果你不知道搜什么'), '搜索页缺少 如果你不知道搜什么');
 check(searchHtml.includes('按读法找书'), '搜索页缺少 按读法找书');
 check(searchHtml.includes('热门搜词'), '搜索页缺少 热门搜词');
@@ -223,6 +232,8 @@ check(searchHtml.includes('英雄传奇'), '搜索页缺少 英雄传奇');
 check(searchHtml.includes('石玉昆'), '搜索页缺少 石玉昆');
 check(searchHtml.includes('施耐庵'), '搜索页缺少 施耐庵');
 check(searchHtml.includes('钱彩'), '搜索页缺少 钱彩');
+check(searchHtml.includes('已整理到第'), '搜索页缺少 已整理到第 文案');
+check(searchHtml.includes('可连读到第'), '搜索页缺少 可连读到第 文案');
 
 check(existsSync(join(DIST, 'topic', 'historical-epics.html')), '缺少专题页: 历史风云');
 check(existsSync(join(DIST, 'topic', 'mythic-realms.html')), '缺少专题页: 神魔奇想');

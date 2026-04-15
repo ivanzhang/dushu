@@ -2,10 +2,18 @@
 import { getCollection } from 'astro:content';
 import ReadingDashboard from '../components/ReadingDashboard.astro';
 import Base from '../layouts/Base.astro';
-import { buildBookDisplayMaps } from '../lib/library';
+import { buildEpubDownloadPath } from '../lib/epub';
+import {
+  buildBookCollectionMaps,
+  buildBookDisplayMaps,
+  pickPlannedBooks,
+} from '../lib/library';
 
 const books = await getCollection('books');
+const chapters = await getCollection('chapters');
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(books);
+const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(books, chapters);
+const deepReadingBooks = pickPlannedBooks(books, ['hongloumeng', 'sanguoyanyi', 'xiyouji']);
 
 const bookMetaList = books.map((book) => ({
   slug: book.id,
@@ -15,6 +23,8 @@ const bookMetaList = books.map((book) => ({
   wordCount: book.data.wordCount,
   tierLabel: tierLabelMap[book.id],
   completionLevel: completionLevelMap[book.id],
+  collectionProgressText: collectionProgressMap[book.id],
+  collectionDepthText: collectionDepthMap[book.id],
 }));
 ---
 
@@ -31,6 +41,42 @@ const bookMetaList = books.map((book) => ({
       </p>
     </header>
 
+    <section class="section reading-return-section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">继续读馆藏更深的书</h2>
+          <p class="section-sub">
+            如果你只是想回来继续深读，先看这三本当前最适合长线追读的镇馆主力。
+          </p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        {deepReadingBooks.map((book) => (
+          <article class="hall-card guide-card reading-return-card">
+            <h3 class="hall-card-title">{book.data.title}</h3>
+            <p class="hall-card-desc">{book.data.summary}</p>
+            <p class="guide-card-meta">
+              {collectionProgressMap[book.id] ?? '馆藏进度整理中'}
+            </p>
+            <p class="guide-card-meta">
+              {collectionDepthMap[book.id] ?? '连读深度整理中'}
+            </p>
+            <div class="reading-return-actions">
+              <a href={`/book/${book.id}`} class="btn btn-secondary guide-card-link">回到书页</a>
+              <a
+                href={buildEpubDownloadPath(book.id)}
+                class="btn btn-secondary guide-card-link"
+                download
+              >
+                下载 EPUB
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
     <ReadingDashboard bookMetaList={bookMetaList} />
   </div>
 </Base>
@@ -38,5 +84,22 @@ const bookMetaList = books.map((book) => ({
 <style>
   .reading-page-header {
     padding-top: 1.5rem;
+  }
+
+  .reading-return-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .reading-return-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .reading-return-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: auto;
   }
 </style>

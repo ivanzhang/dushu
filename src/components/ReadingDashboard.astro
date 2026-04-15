@@ -15,6 +15,8 @@ interface ReadingBookMeta {
   wordCount: number;
   completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
   tierLabel?: string;
+  collectionProgressText?: string;
+  collectionDepthText?: string;
 }
 
 interface Props {
@@ -144,6 +146,8 @@ const { bookMetaList } = Astro.props;
     wordCount: number;
     completionLevel?: 'L1' | 'L2' | 'L3' | 'L4';
     tierLabel?: string;
+    collectionProgressText?: string;
+    collectionDepthText?: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-reading-dashboard]');
@@ -224,6 +228,7 @@ const { bookMetaList } = Astro.props;
         const title = document.createElement('h3');
         const metaText = document.createElement('p');
         const desc = document.createElement('p');
+        const collection = document.createElement('p');
         const progress = document.createElement('p');
         const detail = document.createElement('p');
         const actions = document.createElement('div');
@@ -233,6 +238,7 @@ const { bookMetaList } = Astro.props;
         title.className = 'reading-book-title';
         metaText.className = 'reading-book-meta';
         desc.className = 'reading-book-desc';
+        collection.className = 'reading-book-collection';
         progress.className = 'reading-book-progress';
         detail.className = 'reading-book-detail';
         actions.className = 'reading-book-actions';
@@ -254,6 +260,9 @@ const { bookMetaList } = Astro.props;
         title.textContent = meta.title;
         metaText.textContent = `${meta.author} · ${formatWordCount(meta.wordCount)}`;
         desc.textContent = meta.summary;
+        collection.textContent = [meta.collectionProgressText, meta.collectionDepthText]
+          .filter(Boolean)
+          .join(' · ');
         progress.textContent = `读到第 ${item.chapterNumber} 章 · ${formatProgressLabel(item.progress)}`;
         detail.textContent = `最近足迹 ${item.historyCount} 条 · 书签 ${item.bookmarkCount} 条`;
 
@@ -263,7 +272,13 @@ const { bookMetaList } = Astro.props;
           createActionLink(buildEpubDownloadPath(item.bookSlug), '下载 EPUB', true),
         );
 
-        card.append(badgeRow, title, metaText, desc, progress, detail, actions);
+        const cardChildren = [badgeRow, title, metaText, desc] as HTMLElement[];
+        if (collection.textContent) {
+          cardChildren.push(collection);
+        }
+        cardChildren.push(progress, detail, actions);
+
+        card.append(...cardChildren);
         activeBooksRoot.append(card);
       });
     }

@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import {
   searchAuthorGuides,
   searchKeywordGuides,
@@ -7,15 +8,23 @@ import {
   searchTopicGuides,
 } from '../data/library/entry-guides';
 import Base from '../layouts/Base.astro';
+import { buildEpubDownloadPath } from '../lib/epub';
 import {
+  buildBookCollectionMaps,
   getAuthorProfileBySlug,
   getTopicMetaBySlug,
+  pickPlannedBooks,
 } from '../lib/library';
 
 // 统一生成可复用的搜索深链接，方便作者卡、专题卡和热门词共用。
 // 使用示例：
 // const href = buildSearchHref('志怪');
 const buildSearchHref = (query: string) => `/search?q=${encodeURIComponent(query)}`;
+
+const books = await getCollection('books');
+const chapters = await getCollection('chapters');
+const readingReturnBooks = pickPlannedBooks(books, ['hongloumeng', 'sanguoyanyi', 'xiyouji']);
+const { collectionProgressMap, collectionDepthMap } = buildBookCollectionMaps(readingReturnBooks, chapters);
 
 const featuredSearchAuthors = searchAuthorGuides.flatMap((guide) => {
   const author = getAuthorProfileBySlug(guide.authorSlug);
@@ -46,6 +55,49 @@ const featuredSearchTopics = searchTopicGuides.flatMap((guide) => {
       、
       <a href="/topic/strange-tales" style="color: var(--accent-500);">志怪传奇</a>
       两个专题入口。
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">从我的阅读回来</h2>
+          <p class="section-sub">先接住你的阅读记录，再把深读中的主力长篇重新摆到眼前，方便立刻续上。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid">
+        <article class="hall-card guide-card search-return-card">
+          <h3 class="hall-card-title">回到我的阅读</h3>
+          <p class="hall-card-desc">
+            继续查看当前浏览器里的继续阅读、最近书签、最近足迹和阅读设置，不用重新找回昨天读到哪。
+          </p>
+          <p class="guide-card-meta">会保留本机浏览器里的阅读进度与书签记录。</p>
+          <a href="/reading" class="btn btn-secondary guide-card-link">回到我的阅读</a>
+        </article>
+
+        {readingReturnBooks.map((book) => (
+          <article class="hall-card guide-card search-return-card">
+            <h3 class="hall-card-title">{book.data.title}</h3>
+            <p class="hall-card-desc">{book.data.summary}</p>
+            <p class="guide-card-meta">
+              {collectionProgressMap[book.id] ?? '馆藏进度整理中'}
+            </p>
+            <p class="guide-card-meta">
+              {collectionDepthMap[book.id] ?? '连读深度整理中'}
+            </p>
+            <div class="search-return-actions">
+              <a href={`/book/${book.id}`} class="btn btn-secondary guide-card-link">继续深读</a>
+              <a
+                href={buildEpubDownloadPath(book.id)}
+                class="btn btn-secondary guide-card-link"
+                download
+              >
+                下载 EPUB
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
 
     <section class="section">
@@ -232,5 +284,18 @@ const featuredSearchTopics = searchTopicGuides.flatMap((guide) => {
 
   .guide-card-meta a {
     color: var(--accent-500, #cc5c2f);
+  }
+
+  .search-return-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .search-return-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: auto;
   }
 </style>
