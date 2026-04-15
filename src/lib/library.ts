@@ -17,6 +17,14 @@ type MinimalBookEntry = {
   };
 };
 
+type MinimalChapterEntry = {
+  data: {
+    bookId: string;
+    chapterNumber: number;
+    wordCount: number;
+  };
+};
+
 // 统一管理书籍与章节之间的历史别名。
 // 使用示例：
 // const aliases = chapterBookAliases.shuihuzhuan;
@@ -247,6 +255,67 @@ export function getCollectionCoverageText(
 
   const percent = Math.round((collectedChapterCount / totalChapterCount) * 100);
   return `${collectedChapterCount} / ${totalChapterCount} 章 · ${percent}%`;
+}
+
+// 统计单本书当前真实已整理的章节规模。
+// 使用示例：
+// const stats = getBookCollectionStats('hongloumeng', chapters);
+export function getBookCollectionStats<T extends MinimalChapterEntry>(
+  bookSlug: string,
+  chapters: T[],
+) {
+  const chapterBookIds = new Set(getChapterBookIdsForBook(bookSlug));
+  const chapterMap = new Map<number, T['data']>();
+
+  for (const chapter of chapters) {
+    const { bookId, chapterNumber } = chapter.data;
+    if (!chapterBookIds.has(bookId) || chapterNumber <= 0 || chapterMap.has(chapterNumber)) {
+      continue;
+    }
+    chapterMap.set(chapterNumber, chapter.data);
+  }
+
+  const collectedChapters = [...chapterMap.values()]
+    .sort((left, right) => left.chapterNumber - right.chapterNumber);
+  const chapterNumbers = collectedChapters.map((chapter) => chapter.chapterNumber);
+
+  let continuousChapterCount = 0;
+  for (const chapterNumber of chapterNumbers) {
+    if (chapterNumber !== continuousChapterCount + 1) {
+      break;
+    }
+    continuousChapterCount = chapterNumber;
+  }
+
+  return {
+    collectedChapterCount: collectedChapters.length,
+    continuousChapterCount,
+    latestChapterNumber: chapterNumbers.at(-1) ?? 0,
+    collectedWordCount: collectedChapters.reduce((sum, chapter) => sum + chapter.wordCount, 0),
+  };
+}
+
+// 汇总站内真实已整理规模，供首页展示，不再误用整本理论总量。
+// 使用示例：
+// const stats = getLibraryCollectionStats(books, chapters);
+export function getLibraryCollectionStats<
+  TBook extends MinimalBookEntry,
+  TChapter extends MinimalChapterEntry,
+>(books: TBook[], chapters: TChapter[]) {
+  let booksWithChapters = 0;
+
+  for (const book of books) {
+    if (getBookCollectionStats(book.id, chapters).collectedChapterCount > 0) {
+      booksWithChapters += 1;
+    }
+  }
+
+  return {
+    bookCount: books.length,
+    booksWithChapters,
+    collectedChapterCount: chapters.length,
+    collectedWordCount: chapters.reduce((sum, chapter) => sum + chapter.data.wordCount, 0),
+  };
 }
 
 export {

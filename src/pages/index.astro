@@ -10,12 +10,16 @@ import {
 import Base from '../layouts/Base.astro';
 import {
   buildBookDisplayMaps,
+  getBookCollectionStats,
+  getLibraryCollectionStats,
   pickBooksByCategory,
   pickPlannedBooks,
   sortBooksByPlan,
 } from '../lib/library';
+import { buildEpubDownloadPath } from '../lib/epub';
 
 const books = await getCollection('books');
+const chapters = await getCollection('chapters');
 const sortedBooks = sortBooksByPlan(books);
 
 // 首页先只展示已经落库的书，避免出现空链接。
@@ -32,12 +36,24 @@ const worldlyBooks = pickBooksByCategory(sortedBooks, 'worldly-novels');
 const proseBooks = pickBooksByCategory(sortedBooks, 'classical-prose');
 const recentBooks = [...sortedBooks].reverse().slice(0, 3);
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(sortedBooks);
+const collectionStats = getLibraryCollectionStats(sortedBooks, chapters);
+const coreProgressBooks = pickPlannedBooks(sortedBooks, ['hongloumeng', 'sanguoyanyi', 'xiyouji'])
+  .map((book) => ({
+    book,
+    stats: getBookCollectionStats(book.id, chapters),
+  }));
 
 // 统计数据
-const totalBooks = books.length;
-const totalChapters = books.reduce((sum, b) => sum + b.data.chapterCount, 0);
-const totalWords = books.reduce((sum, b) => sum + b.data.wordCount, 0);
-const totalWordsWan = Math.round(totalWords / 10000);
+const totalBooks = collectionStats.bookCount;
+const totalChapters = collectionStats.collectedChapterCount;
+const totalWords = collectionStats.collectedWordCount;
+const totalWordsText = totalWords >= 10000
+  ? `${(totalWords / 10000).toFixed(1)}万`
+  : `${totalWords}`;
+const strongestCoreDepth = Math.max(
+  0,
+  ...coreProgressBooks.map((item) => item.stats.continuousChapterCount),
+);
 ---
 
 <Base
@@ -60,11 +76,11 @@ const totalWordsWan = Math.round(totalWords / 10000);
           </div>
           <div class="stat">
             <strong>{totalChapters}</strong>
-            <span>现有章节</span>
+            <span>已整理章节</span>
           </div>
           <div class="stat">
-            <strong>{totalWordsWan}万</strong>
-            <span>当前字数</span>
+            <strong>{totalWordsText}</strong>
+            <span>已整理正文</span>
           </div>
         </div>
 
@@ -80,8 +96,43 @@ const totalWordsWan = Math.round(totalWords / 10000);
         description="这一轮先把核心名著做深，保证新读者第一次进站就能看见能读、能逛、能继续追下去的馆藏。"
         href={curatorPicks[0] ? `/book/${curatorPicks[0].id}` : '/search'}
         ctaLabel={curatorPicks[0] ? `先看《${curatorPicks[0].data.title}》` : '去搜索'}
-        meta="本轮优先：核心 5 本做到 L3，重点 5 本做到 L2"
+        meta={`本轮优先：核心三书当前已可连续读到第 ${strongestCoreDepth} 章`}
       />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">核心馆藏进展</h2>
+          <p class="section-sub">先把最能留住回访读者的三本主力长篇补厚，书页、章节页和 EPUB 会一起同步扩深。</p>
+        </div>
+      </div>
+
+      <div class="hall-card-grid core-progress-grid">
+        {coreProgressBooks.map(({ book, stats }) => (
+          <article class="hall-card guide-card core-progress-card">
+            <h3 class="hall-card-title">{book.data.title}</h3>
+            <p class="hall-card-desc">{book.data.summary}</p>
+            <p class="guide-card-meta">
+              已收录 {stats.collectedChapterCount} / {book.data.chapterCount} 章，当前已整理到第 {stats.latestChapterNumber} 章。
+            </p>
+            <p class="guide-card-meta">
+              可连续读到第 {stats.continuousChapterCount} 章，已整理正文约
+              {' '}
+              {stats.collectedWordCount >= 10000
+                ? `${(stats.collectedWordCount / 10000).toFixed(1)} 万字`
+                : `${stats.collectedWordCount} 字`}
+              。
+            </p>
+            <div class="core-progress-actions">
+              <a href={`/book/${book.id}`} class="btn btn-secondary guide-card-link">看书页</a>
+              <a href={buildEpubDownloadPath(book.id)} class="btn btn-secondary guide-card-link" download>下 EPUB</a>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   </section>
 
@@ -223,3 +274,22 @@ const totalWordsWan = Math.round(totalWords / 10000);
     emptyText="最近入藏书架正在更新。"
   />
 </Base>
+
+<style>
+  .core-progress-grid {
+    align-items: stretch;
+  }
+
+  .core-progress-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .core-progress-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+</style>

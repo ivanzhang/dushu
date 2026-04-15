@@ -53,6 +53,8 @@ for (const slug of bookPages) {
       `/book/${slug}.html 缺少 Book JSON-LD`);
     check(content.includes('收录进度'), `/book/${slug}.html 缺少 收录进度`);
     check(content.includes('完成度'), `/book/${slug}.html 缺少 完成度`);
+    check(content.includes('当前已整理到第'), `/book/${slug}.html 缺少 当前已整理到第 文案`);
+    check(content.includes('可连续读到第'), `/book/${slug}.html 缺少 可连续读到第 文案`);
   } else {
     errors.push(`/book/${slug}.html 不存在`);
   }
@@ -126,6 +128,9 @@ check(indexHtml.includes('最近入藏'), '首页缺少 最近入藏 模块');
 check(indexHtml.includes('怎么逛这座小馆'), '首页缺少 怎么逛这座小馆');
 check(indexHtml.includes('按兴趣进入'), '首页缺少 按兴趣进入');
 check(indexHtml.includes('馆藏地图'), '首页缺少 馆藏地图');
+check(indexHtml.includes('已整理章节'), '首页缺少 已整理章节 统计');
+check(indexHtml.includes('已整理正文'), '首页缺少 已整理正文 统计');
+check(indexHtml.includes('核心馆藏进展'), '首页缺少 核心馆藏进展 模块');
 
 const readingHtml = readFileSync(join(DIST, 'reading.html'), 'utf-8');
 check(readingHtml.includes('我的阅读'), '我的阅读页缺少 我的阅读 标题');

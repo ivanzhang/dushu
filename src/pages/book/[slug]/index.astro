@@ -5,6 +5,7 @@ import CompletionBadge from '../../../components/CompletionBadge.astro';
 import Base from '../../../layouts/Base.astro';
 import BookCard from '../../../components/BookCard.astro';
 import {
+  getBookCollectionStats,
   getBookLibraryState,
   getBookTopicEntries,
   getChapterBookIdsForBook,
@@ -31,11 +32,18 @@ const bookChapters = allChapters
   .sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 
 const bookLibraryState = getBookLibraryState(book);
+const bookCollectionStats = getBookCollectionStats(book.id, allChapters);
 const topicEntries = getBookTopicEntries(book);
 const collectionCoverageText = getCollectionCoverageText(
   bookChapters.length,
   data.chapterCount,
 );
+const collectionDepthText = bookCollectionStats.latestChapterNumber > 0
+  ? `当前已整理到第 ${bookCollectionStats.latestChapterNumber} 章，可连续读到第 ${bookCollectionStats.continuousChapterCount} 章。`
+  : '本站还在整理这一部的正文章节。';
+const collectedWordsText = bookCollectionStats.collectedWordCount >= 10000
+  ? `${(bookCollectionStats.collectedWordCount / 10000).toFixed(1)} 万字`
+  : `${bookCollectionStats.collectedWordCount} 字`;
 const firstChapterHref = bookChapters[0]
   ? `/book/${book.id}/${bookChapters[0].id.split('/').pop()!}`
   : undefined;
@@ -137,6 +145,8 @@ const bookJsonLd = JSON.stringify({
           <div>
             <h2 class="section-title">收录进度</h2>
             <p class="book-progress-text">{collectionCoverageText}</p>
+            <p class="book-progress-note">{collectionDepthText}</p>
+            <p class="book-progress-note">本站当前已整理正文约 {collectedWordsText}。</p>
           </div>
         </section>
 
@@ -248,6 +258,12 @@ const bookJsonLd = JSON.stringify({
     gap: 2.5rem;
     align-items: start;
     margin-bottom: 3rem;
+  }
+
+  .book-progress-note {
+    margin: 0.45rem 0 0;
+    color: var(--ink-500);
+    line-height: 1.7;
   }
 
   /* 侧边栏 */

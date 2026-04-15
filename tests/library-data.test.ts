@@ -171,6 +171,20 @@ describe('small library metadata foundation', () => {
     }
   });
 
+  it('核心 3 本已经继续补到前 50 章，能形成更稳的连读入口', () => {
+    const chapterRoot = join(process.cwd(), 'src/content/chapters');
+    const coreBooks = ['hongloumeng', 'sanguoyanyi', 'xiyouji'];
+
+    for (const slug of coreBooks) {
+      const chapterDir = join(chapterRoot, slug);
+      expect(existsSync(chapterDir), `${slug} 章节目录不存在`).toBe(true);
+      expect(
+        readdirSync(chapterDir).filter((file) => file.endsWith('.md')).length,
+        `${slug} 章节数还不足 50`,
+      ).toBeGreaterThanOrEqual(50);
+    }
+  });
+
   it('核心 3 本的真实完成度已经提升到 L3', () => {
     const coreBooks = ['hongloumeng', 'sanguoyanyi', 'xiyouji'];
 
