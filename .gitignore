@@ -31,3 +31,4 @@ public/pagefind/
 
 # Wrangler
 .wrangler/
+.playwright-cli
