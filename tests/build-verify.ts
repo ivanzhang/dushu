@@ -101,6 +101,7 @@ for (const chapterPath of [
   ['xiyouji', '100'],
   ['hongloumeng', '120'],
   ['sanguoyanyi', '120'],
+  ['rulinwaishi', '56'],
 ] as const) {
   const [slug, chapter] = chapterPath;
   check(existsSync(join(DIST, 'book', slug, `${chapter}.html`)), `/book/${slug}/${chapter}.html 不存在`);
@@ -156,6 +157,7 @@ check(existsSync(join(DIST, 'favicon.svg')), '缺少站点图标: favicon.svg');
 const indexHtml = readFileSync(join(DIST, 'index.html'), 'utf-8');
 check(indexHtml.includes('馆长推荐'), '首页缺少 馆长推荐 模块');
 check(indexHtml.includes('名著必读'), '首页缺少 名著必读 模块');
+check(indexHtml.includes('整本可读'), '首页缺少 整本可读 模块');
 check(indexHtml.includes('最近入藏'), '首页缺少 最近入藏 模块');
 check(indexHtml.includes('怎么逛这座小馆'), '首页缺少 怎么逛这座小馆');
 check(indexHtml.includes('按兴趣进入'), '首页缺少 按兴趣进入');

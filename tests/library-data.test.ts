@@ -87,22 +87,31 @@ describe('small library metadata foundation', () => {
     }
   });
 
-  it('重点 5 本的真实完成度已经提升到 L2', () => {
-    const featuredBooks = [
-      'rulinwaishi',
-      'liaozhaizhiyi',
-      'dongzhoulieguozhi',
-      'fengshenyanyi',
-      'guwenguanzhi',
-    ];
+  it('重点 5 本的真实完成度至少达到 L2，其中儒林外史已继续提升到 L4', () => {
+    const expectedLevels = {
+      rulinwaishi: 'L4',
+      liaozhaizhiyi: 'L2',
+      dongzhoulieguozhi: 'L2',
+      fengshenyanyi: 'L2',
+      guwenguanzhi: 'L2',
+    } as const;
 
-    for (const slug of featuredBooks) {
+    for (const [slug, expectedLevel] of Object.entries(expectedLevels)) {
       const bookJson = JSON.parse(
         readFileSync(join(process.cwd(), 'src/content/books', `${slug}.json`), 'utf8'),
       );
 
-      expect(bookJson.completionLevel, `${slug} 的 completionLevel 尚未提升`).toBe('L2');
+      expect(bookJson.completionLevel, `${slug} 的 completionLevel 尚未提升`).toBe(expectedLevel);
     }
+  });
+
+  it('儒林外史已经补齐到全 56 回，世情长篇增加一部整本可读馆藏', () => {
+    const chapterDir = join(process.cwd(), 'src/content/chapters', 'rulinwaishi');
+    expect(existsSync(chapterDir), 'rulinwaishi 章节目录不存在').toBe(true);
+    expect(
+      readdirSync(chapterDir).filter((file) => file.endsWith('.md')).length,
+      'rulinwaishi 章节数还不足 56',
+    ).toBeGreaterThanOrEqual(56);
   });
 
   it('公案与英雄三书已形成双 L3 / 单 L2 分层', () => {
@@ -283,6 +292,14 @@ describe('small library metadata foundation', () => {
 
       expect(bookJson.completionLevel, `${slug} 的 completionLevel 尚未提升`).toBe('L4');
     }
+  });
+
+  it('儒林外史的真实完成度已经提升到 L4', () => {
+    const bookJson = JSON.parse(
+      readFileSync(join(process.cwd(), 'src/content/books', 'rulinwaishi.json'), 'utf8'),
+    );
+
+    expect(bookJson.completionLevel).toBe('L4');
   });
 
   it('核心、重点、铺面配比正确', () => {

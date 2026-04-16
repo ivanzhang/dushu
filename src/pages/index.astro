@@ -38,6 +38,7 @@ const proseBooks = pickBooksByCategory(sortedBooks, 'classical-prose');
 const recentBooks = [...sortedBooks].reverse().slice(0, 3);
 const { tierLabelMap, completionLevelMap } = buildBookDisplayMaps(sortedBooks);
 const { collectionProgressMap, collectionDepthMap, collectionStatusMap } = buildBookCollectionMaps(sortedBooks, chapters);
+const fullReadableBooks = sortedBooks.filter((book) => Boolean(collectionStatusMap[book.id]));
 const collectionStats = getLibraryCollectionStats(sortedBooks, chapters);
 const coreProgressBooks = pickPlannedBooks(sortedBooks, ['hongloumeng', 'sanguoyanyi', 'xiyouji'])
   .map((book) => ({
@@ -206,6 +207,19 @@ const strongestCoreDepth = Math.max(
       </div>
     </div>
   </section>
+
+  <CuratedShelf
+    title="整本可读"
+    description="这里收的是已经补齐全本、可以直接从头一路读到完结的馆藏。"
+    books={fullReadableBooks}
+    showCompletion={true}
+    tierLabelMap={tierLabelMap}
+    completionLevelMap={completionLevelMap}
+    collectionStatusMap={collectionStatusMap}
+    collectionProgressMap={collectionProgressMap}
+    collectionDepthMap={collectionDepthMap}
+    emptyText="整本可读书架正在继续扩充。"
+  />
 
   <CuratedShelf
     title="馆长推荐"

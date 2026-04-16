@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildBookCollectionMaps,
   getBookCollectionStats,
   getBookCollectionStatusText,
   getLibraryCollectionStats,
@@ -67,5 +68,33 @@ describe('library collection stats', () => {
       latestChapterNumber: 100,
       collectedWordCount: 500000,
     }, 120)).toBeUndefined();
+  });
+
+  it('批量书卡映射会把全本可读状态单独外显出来', () => {
+    const { collectionStatusMap } = buildBookCollectionMaps(
+      [
+        { id: 'rulinwaishi', data: { chapterCount: 56 } },
+        { id: 'fengshenyanyi', data: { chapterCount: 100 } },
+      ],
+      [
+        ...Array.from({ length: 56 }, (_, index) => ({
+          data: {
+            bookId: 'rulinwaishi',
+            chapterNumber: index + 1,
+            wordCount: 1000,
+          },
+        })),
+        ...Array.from({ length: 12 }, (_, index) => ({
+          data: {
+            bookId: 'fengshenyanyi',
+            chapterNumber: index + 1,
+            wordCount: 1000,
+          },
+        })),
+      ],
+    );
+
+    expect(collectionStatusMap.rulinwaishi).toBe('已全本收录，可直接从头读到完结');
+    expect(collectionStatusMap.fengshenyanyi).toBeUndefined();
   });
 });
