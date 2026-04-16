@@ -51,13 +51,16 @@ const { bookMetaList } = Astro.props;
   <p class="notice reading-dashboard-notice">
     阅读记录保存在当前浏览器，本机可持续回看；如果换设备或清空浏览器数据，需要重新积累。
   </p>
+  <p class="reading-dashboard-manage-note">
+    在读书卡里也能清空这本记录，书签和足迹都支持逐条移除；如果只是想把样式调回初始状态，也可以恢复默认设置。
+  </p>
 
   <div class="reading-dashboard-grid">
     <section class="panel reading-panel">
       <div class="panel-head reading-panel-head">
         <div>
           <strong class="reading-panel-title">继续阅读中的书</strong>
-          <p class="reading-panel-sub">按最近保存进度排序，可直接回到章节继续阅读。</p>
+          <p class="reading-panel-sub">按最近保存进度排序，可直接回到章节继续阅读；不想保留时也能清空这本记录。</p>
         </div>
       </div>
       <div class="panel-body">
@@ -74,7 +77,7 @@ const { bookMetaList } = Astro.props;
       <div class="panel-head reading-panel-head">
         <div>
           <strong class="reading-panel-title">最近书签</strong>
-          <p class="reading-panel-sub">看到想回来的位置时保存书签，这里会自动汇总。</p>
+          <p class="reading-panel-sub">看到想回来的位置时保存书签，这里会自动汇总，也支持逐条移除。</p>
         </div>
       </div>
       <div class="panel-body">
@@ -88,7 +91,7 @@ const { bookMetaList } = Astro.props;
       <div class="panel-head reading-panel-head">
         <div>
           <strong class="reading-panel-title">最近足迹</strong>
-          <p class="reading-panel-sub">最近打开过的章节会记录在这里，方便回看刚读过什么。</p>
+          <p class="reading-panel-sub">最近打开过的章节会记录在这里，方便回看刚读过什么，也支持逐条移除。</p>
         </div>
       </div>
       <div class="panel-body">
@@ -124,6 +127,11 @@ const { bookMetaList } = Astro.props;
             <dd>默认主题</dd>
           </div>
         </dl>
+        <div class="reading-settings-actions">
+          <button type="button" class="btn btn-secondary btn-sm" data-reader-settings-reset>
+            恢复默认设置
+          </button>
+        </div>
       </div>
     </section>
 
@@ -158,12 +166,16 @@ const { bookMetaList } = Astro.props;
 <script>
   import { buildEpubDownloadPath } from '../lib/epub';
   import {
+    clearBookReadingState,
+    removeBookmarkEntry,
+    removeHistoryEntry,
     READER_STORAGE_KEY,
     buildChapterHref,
     formatProgressLabel,
     getReadingDashboardSnapshot,
     mergeReaderStates,
     parseReaderState,
+    resetReaderSettings,
     serializeReaderState,
   } from '../lib/reader-state';
 
@@ -192,6 +204,7 @@ const { bookMetaList } = Astro.props;
     const importTrigger = root.querySelector<HTMLButtonElement>('[data-reader-import-trigger]');
     const importInput = root.querySelector<HTMLInputElement>('[data-reader-import-input]');
     const backupStatus = root.querySelector<HTMLElement>('[data-reader-backup-status]');
+    const resetSettingsButton = root.querySelector<HTMLButtonElement>('[data-reader-settings-reset]');
 
     const bookMetaList = JSON.parse(bookMetaNode?.textContent ?? '[]') as ReadingBookMeta[];
     const bookMetaMap = new Map(bookMetaList.map((item) => [item.slug, item]));
@@ -243,6 +256,20 @@ const { bookMetaList } = Astro.props;
       return link;
     }
 
+    function createActionButton(text: string) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-secondary btn-sm';
+      button.textContent = text;
+      return button;
+    }
+
+    function persistDashboardState(nextState: ReturnType<typeof parseReaderState>, message: string) {
+      localStorage.setItem(READER_STORAGE_KEY, serializeReaderState(nextState));
+      renderDashboard();
+      setBackupStatus(message, 'success');
+    }
+
     function renderActiveBooks(items: ReturnType<typeof getReadingDashboardSnapshot>['activeBooks']) {
       if (!activeBooksRoot) {
         return;
@@ -276,6 +303,7 @@ const { bookMetaList } = Astro.props;
         const progress = document.createElement('p');
         const detail = document.createElement('p');
         const actions = document.createElement('div');
+        const clearButton = createActionButton('清空这本记录');
 
         card.className = 'reading-book-card';
         badgeRow.className = 'reading-book-badges';
@@ -316,7 +344,19 @@ const { bookMetaList } = Astro.props;
           createActionLink(buildChapterHref(item.bookSlug, item.chapterSlug), '继续阅读'),
           createActionLink(`/book/${item.bookSlug}`, '回到书页', true),
           createActionLink(buildEpubDownloadPath(item.bookSlug), '下载 EPUB', true),
+          clearButton,
         );
+
+        clearButton.addEventListener('click', () => {
+          const confirmed = window.confirm(`确定清空《${meta.title}》的阅读进度、最近足迹和书签吗？`);
+          if (!confirmed) {
+            return;
+          }
+
+          const currentState = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+          const nextState = clearBookReadingState(currentState, item.bookSlug);
+          persistDashboardState(nextState, `已清空《${meta.title}》的阅读记录。`);
+        });
 
         const cardChildren = [badgeRow, title, metaText, desc] as HTMLElement[];
         if (collectionStatus.textContent) {
@@ -344,6 +384,7 @@ const { bookMetaList } = Astro.props;
         progress: number;
       }>,
       emptyText: string,
+      kind: 'bookmark' | 'history',
     ) {
       if (!target) {
         return;
@@ -365,20 +406,38 @@ const { bookMetaList } = Astro.props;
         const link = document.createElement('a');
         const sub = document.createElement('p');
         const meta = document.createElement('span');
+        const actions = document.createElement('div');
+        const removeButton = createActionButton(kind === 'bookmark' ? '移除书签' : '移除足迹');
 
         listItem.className = 'reading-log-item';
         content.className = 'reading-log-content';
         link.className = 'reader-link-item';
         sub.className = 'reading-log-sub';
         meta.className = 'reader-link-meta';
+        actions.className = 'reading-log-actions';
 
         link.href = buildChapterHref(item.bookSlug, item.chapterSlug);
         link.textContent = `${item.bookTitle} · 第 ${item.chapterNumber} 章`;
         sub.textContent = item.chapterTitle;
         meta.textContent = formatProgressLabel(item.progress);
 
+        removeButton.addEventListener('click', () => {
+          const currentState = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+          const nextState = kind === 'bookmark'
+            ? removeBookmarkEntry(currentState, item.bookSlug, item.chapterSlug)
+            : removeHistoryEntry(currentState, item.bookSlug, item.chapterSlug);
+
+          persistDashboardState(
+            nextState,
+            kind === 'bookmark'
+              ? `已移除《${item.bookTitle}》第 ${item.chapterNumber} 章的书签。`
+              : `已移除《${item.bookTitle}》第 ${item.chapterNumber} 章的足迹。`,
+          );
+        });
+
         content.append(link, sub);
-        listItem.append(content, meta);
+        actions.append(meta, removeButton);
+        listItem.append(content, actions);
         target.append(listItem);
       });
     }
@@ -416,8 +475,8 @@ const { bookMetaList } = Astro.props;
       const snapshot = getReadingDashboardSnapshot(state);
 
       renderActiveBooks(snapshot.activeBooks);
-      renderLogList(bookmarkList, snapshot.recentBookmarks, '还没有书签，读到喜欢的位置时再记一下。');
-      renderLogList(historyList, snapshot.recentHistory, '还没有最近阅读记录。');
+      renderLogList(bookmarkList, snapshot.recentBookmarks, '还没有书签，读到喜欢的位置时再记一下。', 'bookmark');
+      renderLogList(historyList, snapshot.recentHistory, '还没有最近阅读记录。', 'history');
       renderSettings(snapshot.settings);
     }
 
@@ -482,6 +541,11 @@ const { bookMetaList } = Astro.props;
 
       await importReaderBackup(file);
     });
+    resetSettingsButton?.addEventListener('click', () => {
+      const currentState = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const nextState = resetReaderSettings(currentState);
+      persistDashboardState(nextState, '已把阅读设置恢复为默认值。');
+    });
 
     window.addEventListener('storage', (event) => {
       if (event.key === READER_STORAGE_KEY) {
@@ -512,7 +576,14 @@ const { bookMetaList } = Astro.props;
   }
 
   .reading-dashboard-notice {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .reading-dashboard-manage-note {
+    margin: 0 0 1.5rem;
+    color: var(--ink-500);
+    font-size: 0.9rem;
+    line-height: 1.7;
   }
 
   .reading-dashboard-grid {
@@ -630,11 +701,25 @@ const { bookMetaList } = Astro.props;
     min-width: 0;
   }
 
+  .reading-log-actions {
+    display: grid;
+    justify-items: end;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+
   .reading-settings-grid {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem;
+  }
+
+  .reading-settings-actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .reading-panel-backup {
@@ -717,6 +802,15 @@ const { bookMetaList } = Astro.props;
     .reading-dashboard-actions {
       width: 100%;
       justify-content: flex-start;
+    }
+
+    .reading-log-item {
+      align-items: flex-start;
+    }
+
+    .reading-log-actions {
+      width: 100%;
+      justify-items: start;
     }
   }
 </style>

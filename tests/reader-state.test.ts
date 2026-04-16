@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as readerState from '../src/lib/reader-state';
 import {
+  clearBookReadingState,
   MAX_READER_HISTORY,
   createDefaultReaderState,
   getBookCatalogMarkers,
@@ -8,8 +9,11 @@ import {
   mergeReaderStates,
   parseReaderState,
   patchReaderSettings,
+  removeBookmarkEntry,
+  removeHistoryEntry,
   resolvePersistedReadingProgress,
   recordReadingHistory,
+  resetReaderSettings,
   toggleBookmark,
   updateReadingProgress,
 } from '../src/lib/reader-state';
@@ -491,5 +495,139 @@ describe('reader state helpers', () => {
       'hongloumeng:012',
       'hongloumeng:008',
     ]);
+  });
+
+  it('可以清空单本阅读记录，同时保留其他书的进度、足迹和书签', () => {
+    let state = createDefaultReaderState();
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      updatedAt: 1713000005000,
+    });
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '003',
+      chapterTitle: '议温明董卓叱丁原',
+      chapterNumber: 3,
+      progress: 0.38,
+      updatedAt: 1713000004000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      visitedAt: 1713000005000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '003',
+      chapterTitle: '议温明董卓叱丁原',
+      chapterNumber: 3,
+      progress: 0.38,
+      visitedAt: 1713000004000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      createdAt: 1713000005000,
+    }).state;
+
+    state = toggleBookmark(state, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '003',
+      chapterTitle: '议温明董卓叱丁原',
+      chapterNumber: 3,
+      progress: 0.38,
+      createdAt: 1713000004000,
+    }).state;
+
+    const next = clearBookReadingState(state, 'hongloumeng');
+
+    expect(next.progress.hongloumeng).toBeUndefined();
+    expect(next.progress.sanguoyanyi?.chapterSlug).toBe('003');
+    expect(next.history.map((item) => item.bookSlug)).toEqual(['sanguoyanyi']);
+    expect(next.bookmarks.map((item) => item.bookSlug)).toEqual(['sanguoyanyi']);
+  });
+
+  it('可以删除单条足迹和单条书签，而不影响同书其他记录', () => {
+    let state = createDefaultReaderState();
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.33,
+      visitedAt: 1713000001000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      visitedAt: 1713000002000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '003',
+      chapterTitle: '贾雨村夤缘复旧职',
+      chapterNumber: 3,
+      progress: 0.33,
+      createdAt: 1713000001000,
+    }).state;
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      createdAt: 1713000002000,
+    }).state;
+
+    const withoutHistory = removeHistoryEntry(state, 'hongloumeng', '003');
+    const withoutBookmark = removeBookmarkEntry(withoutHistory, 'hongloumeng', '003');
+
+    expect(withoutHistory.history.map((item) => item.chapterSlug)).toEqual(['012']);
+    expect(withoutBookmark.bookmarks.map((item) => item.chapterSlug)).toEqual(['012']);
+  });
+
+  it('可以把阅读设置恢复为默认值', () => {
+    const state = patchReaderSettings(createDefaultReaderState(), {
+      fontSize: 26,
+      lineHeight: 2.4,
+      contentWidth: 920,
+      theme: 'dark',
+    });
+
+    const reset = resetReaderSettings(state);
+
+    expect(reset.settings).toEqual(createDefaultReaderState().settings);
   });
 });

@@ -126,6 +126,16 @@ export function patchReaderSettings(
   };
 }
 
+// 把阅读设置恢复到默认值，方便读者随时重置阅读器样式。
+// 使用示例：
+// state = resetReaderSettings(state);
+export function resetReaderSettings(state: ReaderState): ReaderState {
+  return {
+    ...state,
+    settings: { ...DEFAULT_READER_SETTINGS },
+  };
+}
+
 // 按书籍保存最近阅读进度，便于“继续阅读”和章节恢复。
 // 使用示例：
 // state = updateReadingProgress(state, entry);
@@ -159,6 +169,20 @@ export function recordReadingHistory(
   return {
     ...state,
     history: [normalized, ...deduped].slice(0, MAX_READER_HISTORY),
+  };
+}
+
+// 删除单条阅读足迹，供“我的阅读”页做逐条整理。
+// 使用示例：
+// state = removeHistoryEntry(state, 'hongloumeng', '003');
+export function removeHistoryEntry(
+  state: ReaderState,
+  bookSlug: string,
+  chapterSlug: string,
+): ReaderState {
+  return {
+    ...state,
+    history: state.history.filter((item) => !isSameChapter(item.bookSlug, item.chapterSlug, bookSlug, chapterSlug)),
   };
 }
 
@@ -197,6 +221,35 @@ export function toggleBookmark(
         ...sameBook,
       ].slice(0, MAX_BOOKMARKS_PER_BOOK).concat(deduped),
     },
+  };
+}
+
+// 删除单条书签，方便在“我的阅读”页直接整理收藏位置。
+// 使用示例：
+// state = removeBookmarkEntry(state, 'hongloumeng', '003');
+export function removeBookmarkEntry(
+  state: ReaderState,
+  bookSlug: string,
+  chapterSlug: string,
+): ReaderState {
+  return {
+    ...state,
+    bookmarks: state.bookmarks.filter((item) => !isSameChapter(item.bookSlug, item.chapterSlug, bookSlug, chapterSlug)),
+  };
+}
+
+// 清空某本书的全部阅读记录：进度、足迹和书签一起移除。
+// 使用示例：
+// state = clearBookReadingState(state, 'hongloumeng');
+export function clearBookReadingState(state: ReaderState, bookSlug: string): ReaderState {
+  const progress = { ...state.progress };
+  delete progress[bookSlug];
+
+  return {
+    ...state,
+    progress,
+    history: state.history.filter((item) => item.bookSlug !== bookSlug),
+    bookmarks: state.bookmarks.filter((item) => item.bookSlug !== bookSlug),
   };
 }
 
