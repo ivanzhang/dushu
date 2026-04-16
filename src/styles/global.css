@@ -970,18 +970,15 @@ img {
 
 /* ---------- 章节导航 ---------- */
 .chapter-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
   padding: 16px 0;
-  flex-wrap: wrap;
 }
 
-.chapter-nav-center {
-  text-align: center;
-  font-size: 13px;
-  color: var(--ink-500);
+.chapter-nav-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 /* ---------- 阅读器 ---------- */
@@ -1572,12 +1569,6 @@ body.reader-theme-dark footer {
   .checkout-summary {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .chapter-nav {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
   }
 
   .chapter-nav .btn {

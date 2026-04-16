@@ -102,34 +102,6 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
       <span aria-current="page">{chapter.data.title}</span>
     </nav>
 
-    <!-- 阅读控件 -->
-    <ReaderControls
-      bookSlug={canonicalBookSlug}
-      bookTitle={bookTitle}
-      chapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
-      chapterTitle={chapter.data.title}
-      chapterNumber={currentChapterNumber}
-      totalChapters={totalChapters}
-    />
-
-    <ChapterReaderHub
-      bookSlug={canonicalBookSlug}
-      bookTitle={bookTitle}
-      currentChapterNumber={currentChapterNumber}
-      totalChapterCount={bookChapterCount || totalChapters}
-      latestChapterNumber={bookCollectionStats.latestChapterNumber}
-      continuousChapterCount={bookCollectionStats.continuousChapterCount}
-      collectionStatusText={bookCollectionStatusText}
-    />
-
-    <ChapterQuickNav
-      bookSlug={canonicalBookSlug}
-      currentChapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
-      currentChapterNumber={currentChapterNumber}
-      totalChapters={totalChapters}
-      chapters={chapterQuickNavItems}
-    />
-
     <!-- 章节上导航 -->
     <ChapterNav
       bookSlug={canonicalBookSlug}
@@ -138,6 +110,49 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
       prevSlug={prevSlug}
       nextSlug={nextSlug}
     />
+
+    <!-- 阅读工具抽屉：桌面端常驻，移动端默认折叠，优先把正文露出来 -->
+    <section class="chapter-tools-drawer" data-reader-drawer data-expanded="false">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm chapter-tools-toggle"
+        data-reader-drawer-toggle
+        aria-expanded="false"
+        aria-controls="chapter-reader-drawer-body"
+      >
+        展开阅读工具与目录
+      </button>
+      <p class="chapter-tools-hint">移动端默认先收起这些工具，先看正文；需要时再展开阅读设置、进度和目录。</p>
+
+      <div id="chapter-reader-drawer-body" class="chapter-tools-stack" data-reader-drawer-body>
+        <ReaderControls
+          bookSlug={canonicalBookSlug}
+          bookTitle={bookTitle}
+          chapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
+          chapterTitle={chapter.data.title}
+          chapterNumber={currentChapterNumber}
+          totalChapters={totalChapters}
+        />
+
+        <ChapterReaderHub
+          bookSlug={canonicalBookSlug}
+          bookTitle={bookTitle}
+          currentChapterNumber={currentChapterNumber}
+          totalChapterCount={bookChapterCount || totalChapters}
+          latestChapterNumber={bookCollectionStats.latestChapterNumber}
+          continuousChapterCount={bookCollectionStats.continuousChapterCount}
+          collectionStatusText={bookCollectionStatusText}
+        />
+
+        <ChapterQuickNav
+          bookSlug={canonicalBookSlug}
+          currentChapterSlug={chapterFileSlug ?? chapter.id.split('/').pop()!}
+          currentChapterNumber={currentChapterNumber}
+          totalChapters={totalChapters}
+          chapters={chapterQuickNavItems}
+        />
+      </div>
+    </section>
 
     <!-- 章节正文 -->
     <article class="reader-article">
@@ -165,7 +180,72 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
   </div>
 </Base>
 
+<script>
+  const readerDrawer = document.querySelector<HTMLElement>('[data-reader-drawer]');
+
+  if (readerDrawer) {
+    const toggleButton = readerDrawer.querySelector<HTMLButtonElement>('[data-reader-drawer-toggle]');
+    const mediaQuery = window.matchMedia('(max-width: 720px)');
+    let lastIsMobile = mediaQuery.matches;
+
+    function syncDrawerMode() {
+      const isMobile = mediaQuery.matches;
+
+      if (isMobile && !lastIsMobile) {
+        readerDrawer.dataset.expanded = 'false';
+      }
+
+      const expanded = isMobile ? readerDrawer.dataset.expanded === 'true' : true;
+
+      readerDrawer.dataset.mobile = isMobile ? 'true' : 'false';
+      readerDrawer.dataset.expanded = expanded ? 'true' : 'false';
+
+      if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        toggleButton.textContent = expanded ? '收起阅读工具与目录' : '展开阅读工具与目录';
+      }
+
+      lastIsMobile = isMobile;
+    }
+
+    toggleButton?.addEventListener('click', () => {
+      if (!mediaQuery.matches) {
+        return;
+      }
+
+      readerDrawer.dataset.expanded = readerDrawer.dataset.expanded === 'true' ? 'false' : 'true';
+      syncDrawerMode();
+    });
+
+    syncDrawerMode();
+    mediaQuery.addEventListener('change', syncDrawerMode);
+  }
+</script>
+
 <style>
+  .chapter-tools-drawer {
+    margin-bottom: 1rem;
+  }
+
+  .chapter-tools-toggle {
+    display: none;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .chapter-tools-hint {
+    display: none;
+    margin: 0.55rem 0 0;
+    color: var(--ink-500, #5f5044);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    text-align: center;
+  }
+
+  .chapter-tools-stack {
+    display: grid;
+  }
+
   .reader-article {
     max-width: 720px;
     margin: 0 auto 2rem;
@@ -243,5 +323,24 @@ const chapterQuickNavItems = bookChapters.map((item) => ({
 
   :global(.reader-theme-dark) .chapter-title {
     color: #e8ddd0;
+  }
+
+  @media (max-width: 720px) {
+    .chapter-tools-toggle,
+    .chapter-tools-hint {
+      display: flex;
+    }
+
+    .chapter-tools-hint {
+      display: block;
+    }
+
+    .chapter-tools-drawer[data-expanded='false'] .chapter-tools-stack {
+      display: none;
+    }
+
+    .chapter-tools-drawer[data-expanded='true'] .chapter-tools-stack {
+      display: grid;
+    }
   }
 </style>

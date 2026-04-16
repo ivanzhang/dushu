@@ -2707,3 +2707,153 @@ Claude 当时的主计划，是把旧的纯 HTML 模板站改造成 Astro 6 SSG 
 ### 五、这轮收口后的状态
 
 到这里为止，这一批“《儒林外史》补齐全 `56` 回 + 首页新增整本可读书架 + 完成度提升到 `L4`”已经完成本地验证，可以直接进入提交、推送与线上抽查阶段。
+
+---
+
+## 2026-04-16 上午续推（`www` 301 接入 + 《子不语》补齐 + 移动端章节页折叠优化）
+
+- 记录时间：2026-04-16
+- 记录目的：把 `www.dushu.my` 接入与永久跳转补齐，把《子不语》提升为完整馆藏，并把移动端章节页的首屏阅读体验收紧。
+
+### 一、今天完成的线上接入修复
+
+#### 1. `www.dushu.my` 已补上 Cloudflare Pages 自定义域
+
+今天已完成：
+
+- 为 Pages 项目新增自定义域 `www.dushu.my`
+- 为 DNS 新增 `www` 的代理 CNAME，指向 `dushumy.pages.dev`
+
+确认结果：
+
+- Cloudflare Pages 中 `www.dushu.my` 状态已为 `active`
+- `https://www.dushu.my/` 已能正常返回，不再是此前的空响应 / TLS 异常
+
+#### 2. `www -> apex` 的 `301` 已改由 Pages 中间件落地
+
+由于当前 Cloudflare token 对 Page Rules / Dynamic Redirect Rules 的权限路径受限，这次改为直接在站点代码中实现跳转：
+
+- 新增 `functions/_middleware.js`
+- 新增 `tests/host-redirect.test.ts`
+
+实现结果：
+
+- 当 Host 为 `www.dushu.my` 时，返回 `301` 到 `https://dushu.my`
+- 其他域名保持原有请求链路，不影响 `dushu.my` 与 `dushumy.pages.dev`
+
+这次没有再卡在 Cloudflare 规则权限上，而是把跳转逻辑收进了 Pages 自己的运行链路里。
+
+### 二、今天完成的馆藏推进
+
+#### 1. 《子不语》已补齐到全 `24` 则
+
+今天已补齐：
+
+- `src/content/chapters/zibuyu/17.md`
+- `src/content/chapters/zibuyu/18.md`
+- `src/content/chapters/zibuyu/19.md`
+- `src/content/chapters/zibuyu/20.md`
+- `src/content/chapters/zibuyu/21.md`
+- `src/content/chapters/zibuyu/22.md`
+- `src/content/chapters/zibuyu/23.md`
+- `src/content/chapters/zibuyu/24.md`
+
+对应更新：
+
+- `src/content/books/zibuyu.json`
+
+当前状态：
+
+- 《子不语》已从此前的部分收录推进到全本可读
+- 完成度已提升到 `L4`
+- 当前构建产物中已生成 `/book/zibuyu/24.html`
+- 当前构建产物中已生成 `/epub/zibuyu.epub`
+
+#### 2. 站内“整本可读”馆藏又补厚了一本
+
+《子不语》补齐之后，首页“整本可读”书架对应的真实馆藏进一步增加，站点从“可以试读几本”继续往“确实有一排能整本读完的小型读书馆”推进了一步。
+
+### 三、今天完成的移动端章节页优化
+
+#### 1. 章节页工具区改为移动端默认折叠
+
+今天已调整：
+
+- `src/pages/book/[slug]/[chapter].astro`
+
+实现方式：
+
+- 新增统一的移动端折叠抽屉
+- 把以下区域一起收进抽屉：
+  - 阅读设置
+  - 阅读进度 / 最近阅读
+  - 本书目录 / 快速跳章
+- 桌面端保持常显
+- 移动端默认先折叠，让正文更早进入首屏
+
+折叠按钮文案为：
+
+- `展开阅读工具与目录`
+- `收起阅读工具与目录`
+
+#### 2. 上一章 / 返回目录 / 下一章 已改成紧凑三按钮并排
+
+今天已调整：
+
+- `src/components/ChapterNav.astro`
+
+实现结果：
+
+- 三个按钮改为单行三列布局
+- 手机上不再每个按钮单独占整行
+- 章节页顶部与底部导航都同步收紧
+
+#### 3. 已补上移动端行为修正
+
+为避免“桌面打开后再缩到手机宽度时，抽屉还保持展开”的问题，今天又在章节页脚本里补了模式切换同步逻辑：
+
+- 记录上一次是否处于移动端
+- 当桌面切到移动端时，强制把工具抽屉恢复为折叠态
+
+这样无论是直接用手机打开，还是桌面浏览器缩到手机宽度，正文都会优先露出来。
+
+### 四、今天的验证结果
+
+#### 1. 自动化验证
+
+- `bun run vitest tests/host-redirect.test.ts`
+  - `2` 个测试全部通过
+- `bun run test`
+  - `99` 个测试全部通过
+- `bun run build`
+  - Astro 构建成功
+  - 产物页数：`859` pages
+- `bun run build:verify`
+  - 构建验证：`2745` 项检查全部通过
+
+#### 2. Playwright 复测移动端章节页
+
+本轮又额外做了两种场景的 Playwright 复测，目标页为：
+
+- `http://127.0.0.1:4173/book/hongloumeng/001.html`
+
+确认结果：
+
+- 直接以手机宽度 `390 x 844` 打开时：
+  - 工具抽屉默认折叠
+  - 按钮文案显示 `展开阅读工具与目录`
+  - 折叠区内容默认隐藏
+- 桌面宽度打开后再切到手机宽度时：
+  - 工具抽屉会自动恢复折叠
+  - 不再出现“缩窄后仍默认展开”的问题
+- `上一章 / 返回目录 / 下一章` 三个按钮在手机宽度下保持同一行并排显示
+- 展开 / 收起切换正常
+
+本地还保存了这轮手机视口截图：
+
+- `output/playwright/chapter-mobile-collapsed.png`
+- `output/playwright/chapter-mobile-expanded.png`
+
+### 五、当前这轮工作的收口状态
+
+到这里为止，这一批“`www.dushu.my` 接入并永久跳转到主域名 + 《子不语》补齐全本 + 移动端章节页正文优先改造”已经完成本地验证，下一步可以继续做提交、推送、观察部署与线上抽查。

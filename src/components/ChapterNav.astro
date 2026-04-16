@@ -30,44 +30,63 @@ const catalogHref = `/book/${bookSlug}`;
 ---
 
 <nav class="chapter-nav" aria-label="章节导航">
-  <!-- 上一章 -->
-  {prevHref
-    ? (
-      <a href={prevHref} class="btn btn-secondary" rel="prev">
-        ‹ 上一章
-      </a>
-    )
-    : (
-      <span class="btn btn-secondary chapter-nav-disabled" aria-disabled="true">
-        ‹ 上一章
-      </span>
-    )
-  }
+  <div class="chapter-nav-actions">
+    <!-- 上一章 -->
+    {prevHref
+      ? (
+        <a href={prevHref} class="btn btn-secondary btn-sm chapter-nav-btn" rel="prev">
+          ‹ 上一章
+        </a>
+      )
+      : (
+        <span class="btn btn-secondary btn-sm chapter-nav-btn chapter-nav-disabled" aria-disabled="true">
+          ‹ 上一章
+        </span>
+      )
+    }
 
-  <!-- 返回目录 + 进度提示 -->
-  <div class="chapter-nav-center">
-    <a href={catalogHref} class="btn btn-secondary">返回目录</a>
-    <p class="chapter-nav-progress">
-      第 {currentChapter} 章 / 共 {totalChapters} 章
-    </p>
+    <!-- 返回目录 -->
+    <a href={catalogHref} class="btn btn-secondary btn-sm chapter-nav-btn">返回目录</a>
+
+    <!-- 下一章 -->
+    {nextHref
+      ? (
+        <a href={nextHref} class="btn btn-secondary btn-sm chapter-nav-btn" rel="next">
+          下一章 ›
+        </a>
+      )
+      : (
+        <span class="btn btn-secondary btn-sm chapter-nav-btn chapter-nav-disabled" aria-disabled="true">
+          下一章 ›
+        </span>
+      )
+    }
   </div>
 
-  <!-- 下一章 -->
-  {nextHref
-    ? (
-      <a href={nextHref} class="btn btn-secondary" rel="next">
-        下一章 ›
-      </a>
-    )
-    : (
-      <span class="btn btn-secondary chapter-nav-disabled" aria-disabled="true">
-        下一章 ›
-      </span>
-    )
-  }
+  <p class="chapter-nav-progress">
+    第 {currentChapter} 章 / 共 {totalChapters} 章
+  </p>
 </nav>
 
 <style>
+  .chapter-nav {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .chapter-nav-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    align-items: stretch;
+  }
+
+  .chapter-nav-btn {
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+  }
+
   .chapter-nav-disabled {
     opacity: 0.4;
     pointer-events: none;
@@ -75,9 +94,20 @@ const catalogHref = `/book/${bookSlug}`;
   }
 
   .chapter-nav-progress {
-    margin: 6px 0 0;
+    margin: 0;
     font-size: 12px;
     color: var(--ink-300);
     text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .chapter-nav-actions {
+      gap: 0.45rem;
+    }
+
+    .chapter-nav-btn {
+      padding-inline: 0.4rem;
+      letter-spacing: 0;
+    }
   }
 </style>

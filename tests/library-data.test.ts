@@ -67,11 +67,11 @@ describe('small library metadata foundation', () => {
     }
   });
 
-  it('5 本短篇组已经补到更稳的试读深度，三本支撑书拉齐到 16 篇', () => {
+  it('5 本短篇组已经继续补厚，其中子不语已补齐到全 24 则', () => {
     const chapterRoot = join(process.cwd(), 'src/content/chapters');
     const chapterTargets = {
       yueweicaotangbiji: 12,
-      zibuyu: 16,
+      zibuyu: 24,
       yushimingyan: 12,
       jingshitongyan: 16,
       xingshihengyan: 16,
@@ -114,6 +114,15 @@ describe('small library metadata foundation', () => {
     ).toBeGreaterThanOrEqual(56);
   });
 
+  it('子不语已经补齐到全 24 则，志怪短篇再增加一部整本可读馆藏', () => {
+    const chapterDir = join(process.cwd(), 'src/content/chapters', 'zibuyu');
+    expect(existsSync(chapterDir), 'zibuyu 章节目录不存在').toBe(true);
+    expect(
+      readdirSync(chapterDir).filter((file) => file.endsWith('.md')).length,
+      'zibuyu 章节数还不足 24',
+    ).toBeGreaterThanOrEqual(24);
+  });
+
   it('公案与英雄三书已形成双 L3 / 单 L2 分层', () => {
     const l3Anchors = ['sanxiawuyi', 'shuoyuequanzhuan'];
     const l2SupportBooks = ['suitangyanyi'];
@@ -145,9 +154,9 @@ describe('small library metadata foundation', () => {
     expect(chapterContent).not.toContain('title: "詩曰："');
   });
 
-  it('5 本短篇组已形成 L2 / L3 的分层完成度', () => {
+  it('5 本短篇组已形成 L2 / L3 / L4 的分层完成度', () => {
     const l3Anchors = ['yueweicaotangbiji', 'yushimingyan'];
-    const l2SupportBooks = ['zibuyu', 'jingshitongyan', 'xingshihengyan'];
+    const l2SupportBooks = ['jingshitongyan', 'xingshihengyan'];
 
     for (const slug of l3Anchors) {
       const bookJson = JSON.parse(
@@ -164,6 +173,11 @@ describe('small library metadata foundation', () => {
 
       expect(bookJson.completionLevel, `${slug} 的 completionLevel 不应偏离 L2`).toBe('L2');
     }
+
+    const zibuyuJson = JSON.parse(
+      readFileSync(join(process.cwd(), 'src/content/books', 'zibuyu.json'), 'utf8'),
+    );
+    expect(zibuyuJson.completionLevel, 'zibuyu 的 completionLevel 尚未提升到 L4').toBe('L4');
   });
 
   it('核心 3 本已经补齐到前 12 章，可作为深读入口', () => {
