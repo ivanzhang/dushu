@@ -575,6 +575,12 @@ const bookJsonLd = JSON.stringify({
       grid-template-columns: 1fr;
     }
 
+    /* 移动端改成单列后，侧栏不能继续 sticky，否则会悬浮挡住下方正文与目录。 */
+    .book-sidebar {
+      position: static;
+      top: auto;
+    }
+
     .book-progress-card {
       grid-template-columns: 1fr;
     }
