@@ -5,6 +5,7 @@ import {
   createDefaultReaderState,
   getBookCatalogMarkers,
   getBookReadingSnapshot,
+  mergeReaderStates,
   parseReaderState,
   patchReaderSettings,
   resolvePersistedReadingProgress,
@@ -353,5 +354,142 @@ describe('reader state helpers', () => {
       historyCount: 1,
       bookmarkCount: 0,
     });
+  });
+
+  it('导入阅读记录时会合并本地与备份状态，并优先保留较新的进度', () => {
+    let localState = createDefaultReaderState();
+
+    localState = patchReaderSettings(localState, {
+      fontSize: 22,
+      lineHeight: 2.1,
+      contentWidth: 820,
+      theme: 'dark',
+    });
+
+    localState = updateReadingProgress(localState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.42,
+      updatedAt: 1713000001000,
+    });
+
+    localState = recordReadingHistory(localState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.42,
+      visitedAt: 1713000001000,
+    });
+
+    localState = toggleBookmark(localState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.42,
+      createdAt: 1713000001000,
+    }).state;
+
+    let importedState = createDefaultReaderState();
+
+    importedState = patchReaderSettings(importedState, {
+      fontSize: 24,
+      lineHeight: 1.8,
+      contentWidth: 760,
+      theme: 'sepia',
+    });
+
+    importedState = updateReadingProgress(importedState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.77,
+      updatedAt: 1713000005000,
+    });
+
+    importedState = updateReadingProgress(importedState, {
+      bookSlug: 'sanguoyanyi',
+      bookTitle: '三国演义',
+      chapterSlug: '003',
+      chapterTitle: '议温明董卓叱丁原',
+      chapterNumber: 3,
+      progress: 0.38,
+      updatedAt: 1713000004000,
+    });
+
+    importedState = recordReadingHistory(importedState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.77,
+      visitedAt: 1713000005000,
+    });
+
+    importedState = recordReadingHistory(importedState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.65,
+      visitedAt: 1713000004500,
+    });
+
+    importedState = toggleBookmark(importedState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.77,
+      createdAt: 1713000005000,
+    }).state;
+
+    importedState = toggleBookmark(importedState, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '008',
+      chapterTitle: '比通灵金莺微露意',
+      chapterNumber: 8,
+      progress: 0.65,
+      createdAt: 1713000004500,
+    }).state;
+
+    const merged = mergeReaderStates(localState, importedState);
+
+    expect(merged.settings).toMatchObject({
+      fontSize: 24,
+      lineHeight: 1.8,
+      contentWidth: 760,
+      theme: 'sepia',
+    });
+    expect(merged.progress.hongloumeng).toMatchObject({
+      chapterSlug: '012',
+      chapterNumber: 12,
+      progress: 0.77,
+    });
+    expect(merged.progress.sanguoyanyi).toMatchObject({
+      chapterSlug: '003',
+      chapterNumber: 3,
+      progress: 0.38,
+    });
+    expect(merged.history.slice(0, 3).map((item) => `${item.bookSlug}:${item.chapterSlug}`)).toEqual([
+      'hongloumeng:012',
+      'hongloumeng:008',
+    ]);
+    expect(merged.bookmarks.map((item) => `${item.bookSlug}:${item.chapterSlug}`)).toEqual([
+      'hongloumeng:012',
+      'hongloumeng:008',
+    ]);
   });
 });

@@ -245,6 +245,23 @@ export function getReadingDashboardSnapshot(state: ReaderState): ReadingDashboar
   };
 }
 
+// 合并本地阅读状态与导入备份，尽量保留每项里“更新更晚”的记录。
+// 使用示例：
+// const merged = mergeReaderStates(currentState, importedState);
+export function mergeReaderStates(current: ReaderState, imported: ReaderState): ReaderState {
+  const progress = mergeProgressEntries(current.progress, imported.progress);
+  const history = mergeHistoryEntries(current.history, imported.history);
+  const bookmarks = mergeBookmarkEntries(current.bookmarks, imported.bookmarks);
+
+  return {
+    version: 1,
+    settings: normalizeReaderSettings(imported.settings),
+    progress,
+    history,
+    bookmarks,
+  };
+}
+
 // 构造章节链接，供继续阅读、历史、书签统一跳转。
 // 使用示例：
 // const href = buildChapterHref('hongloumeng', '003');
@@ -316,6 +333,76 @@ function normalizeProgressMap(
     .filter((entry): entry is readonly [string, ReaderProgressEntry] => Boolean(entry));
 
   return Object.fromEntries(entries);
+}
+
+function mergeProgressEntries(
+  current: Record<string, ReaderProgressEntry>,
+  imported: Record<string, ReaderProgressEntry>,
+): Record<string, ReaderProgressEntry> {
+  const merged = new Map<string, ReaderProgressEntry>();
+
+  for (const entry of [...Object.values(current), ...Object.values(imported)]) {
+    const normalized = normalizeProgressEntry(entry);
+    const existing = merged.get(normalized.bookSlug);
+
+    if (!existing || normalized.updatedAt >= existing.updatedAt) {
+      merged.set(normalized.bookSlug, normalized);
+    }
+  }
+
+  return Object.fromEntries([...merged.entries()]);
+}
+
+function mergeHistoryEntries(
+  current: ReaderHistoryEntry[],
+  imported: ReaderHistoryEntry[],
+): ReaderHistoryEntry[] {
+  const merged = new Map<string, ReaderHistoryEntry>();
+
+  for (const entry of [...current, ...imported]) {
+    const normalized = normalizeHistoryEntry(entry);
+    const key = `${normalized.bookSlug}::${normalized.chapterSlug}`;
+    const existing = merged.get(key);
+
+    if (!existing || normalized.visitedAt >= existing.visitedAt) {
+      merged.set(key, normalized);
+    }
+  }
+
+  return [...merged.values()]
+    .sort((left, right) => right.visitedAt - left.visitedAt)
+    .slice(0, MAX_READER_HISTORY);
+}
+
+function mergeBookmarkEntries(
+  current: ReaderBookmarkEntry[],
+  imported: ReaderBookmarkEntry[],
+): ReaderBookmarkEntry[] {
+  const merged = new Map<string, ReaderBookmarkEntry>();
+
+  for (const entry of [...current, ...imported]) {
+    const normalized = normalizeBookmarkEntry(entry);
+    const key = `${normalized.bookSlug}::${normalized.chapterSlug}`;
+    const existing = merged.get(key);
+
+    if (!existing || normalized.createdAt >= existing.createdAt) {
+      merged.set(key, normalized);
+    }
+  }
+
+  const perBookCount = new Map<string, number>();
+
+  return [...merged.values()]
+    .sort((left, right) => right.createdAt - left.createdAt)
+    .filter((entry) => {
+      const count = perBookCount.get(entry.bookSlug) ?? 0;
+      if (count >= MAX_BOOKMARKS_PER_BOOK) {
+        return false;
+      }
+
+      perBookCount.set(entry.bookSlug, count + 1);
+      return true;
+    });
 }
 
 function normalizeHistoryList(history: ReaderHistoryEntry[] | undefined): ReaderHistoryEntry[] {

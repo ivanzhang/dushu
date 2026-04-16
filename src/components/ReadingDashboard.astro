@@ -126,6 +126,32 @@ const { bookMetaList } = Astro.props;
         </dl>
       </div>
     </section>
+
+    <section class="panel reading-panel reading-panel-backup">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">阅读记录备份</strong>
+          <p class="reading-panel-sub">把当前浏览器里的进度、书签、足迹和阅读设置导出成备份，换设备时再导回来。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="reading-backup-actions">
+          <button type="button" class="btn btn-secondary" data-reader-export>
+            导出阅读记录
+          </button>
+          <button type="button" class="btn btn-secondary" data-reader-import-trigger>
+            导入备份文件
+          </button>
+          <input type="file" accept=".json,application/json" data-reader-import-input hidden />
+        </div>
+        <p class="reading-backup-note">
+          导入时会把备份和当前浏览器里的记录合并，较新的进度会优先保留，不必担心把刚读到的位置冲掉。
+        </p>
+        <p class="reading-backup-status" data-reader-backup-status>
+          建议在换设备前先导出一次，文件会保存为 JSON，可随时留档。
+        </p>
+      </div>
+    </section>
   </div>
 </section>
 
@@ -136,7 +162,9 @@ const { bookMetaList } = Astro.props;
     buildChapterHref,
     formatProgressLabel,
     getReadingDashboardSnapshot,
+    mergeReaderStates,
     parseReaderState,
+    serializeReaderState,
   } from '../lib/reader-state';
 
   interface ReadingBookMeta {
@@ -160,6 +188,10 @@ const { bookMetaList } = Astro.props;
     const bookmarkList = root.querySelector<HTMLElement>('[data-bookmark-list]');
     const historyList = root.querySelector<HTMLElement>('[data-history-list]');
     const settingsList = root.querySelector<HTMLElement>('[data-settings-list]');
+    const exportButton = root.querySelector<HTMLButtonElement>('[data-reader-export]');
+    const importTrigger = root.querySelector<HTMLButtonElement>('[data-reader-import-trigger]');
+    const importInput = root.querySelector<HTMLInputElement>('[data-reader-import-input]');
+    const backupStatus = root.querySelector<HTMLElement>('[data-reader-backup-status]');
 
     const bookMetaList = JSON.parse(bookMetaNode?.textContent ?? '[]') as ReadingBookMeta[];
     const bookMetaMap = new Map(bookMetaList.map((item) => [item.slug, item]));
@@ -182,6 +214,15 @@ const { bookMetaList } = Astro.props;
       }
 
       return '默认主题';
+    }
+
+    function setBackupStatus(message: string, tone: 'neutral' | 'success' | 'error' = 'neutral') {
+      if (!backupStatus) {
+        return;
+      }
+
+      backupStatus.dataset.tone = tone;
+      backupStatus.textContent = message;
     }
 
     function getBookMeta(bookSlug: string, fallbackTitle: string) {
@@ -380,7 +421,68 @@ const { bookMetaList } = Astro.props;
       renderSettings(snapshot.settings);
     }
 
+    function exportReaderBackup() {
+      const state = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const today = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([serializeReaderState(state)], {
+        type: 'application/json;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = `mochao-reader-backup-${today}.json`;
+      link.click();
+
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setBackupStatus('已导出当前浏览器里的阅读记录，可把这个 JSON 带到别的设备导入。', 'success');
+    }
+
+    async function importReaderBackup(file: File) {
+      const raw = await file.text();
+
+      try {
+        JSON.parse(raw);
+      } catch {
+        setBackupStatus('导入失败：这个文件不是合法的 JSON 备份。', 'error');
+        return;
+      }
+
+      const importedState = parseReaderState(raw);
+      const hasReaderRecords = Object.keys(importedState.progress).length > 0
+        || importedState.history.length > 0
+        || importedState.bookmarks.length > 0;
+
+      if (!hasReaderRecords) {
+        setBackupStatus('导入取消：备份里没有可用的进度、书签或最近阅读记录。', 'error');
+        return;
+      }
+
+      const currentState = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+      const mergedState = mergeReaderStates(currentState, importedState);
+
+      localStorage.setItem(READER_STORAGE_KEY, serializeReaderState(mergedState));
+      renderDashboard();
+      setBackupStatus('已合并导入备份，较新的进度会优先保留到当前浏览器。', 'success');
+    }
+
     renderDashboard();
+
+    exportButton?.addEventListener('click', exportReaderBackup);
+    importTrigger?.addEventListener('click', () => {
+      importInput?.click();
+    });
+    importInput?.addEventListener('change', async () => {
+      const file = importInput.files?.[0];
+      importInput.value = '';
+
+      if (!file) {
+        return;
+      }
+
+      await importReaderBackup(file);
+    });
+
     window.addEventListener('storage', (event) => {
       if (event.key === READER_STORAGE_KEY) {
         renderDashboard();
@@ -533,6 +635,38 @@ const { bookMetaList } = Astro.props;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem;
+  }
+
+  .reading-panel-backup {
+    grid-column: 1 / -1;
+  }
+
+  .reading-backup-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .reading-backup-note,
+  .reading-backup-status {
+    margin: 0.9rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .reading-backup-status {
+    color: var(--ink-700);
+  }
+
+  .reading-backup-status[data-tone='success'] {
+    color: var(--teal-500);
+    font-weight: 600;
+  }
+
+  .reading-backup-status[data-tone='error'] {
+    color: var(--accent-600);
+    font-weight: 600;
   }
 
   .reading-setting-item {
