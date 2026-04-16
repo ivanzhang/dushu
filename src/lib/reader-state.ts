@@ -186,6 +186,16 @@ export function removeHistoryEntry(
   };
 }
 
+// 清空全部阅读足迹，保留当前阅读进度、书签与阅读设置。
+// 使用示例：
+// state = clearAllHistory(state);
+export function clearAllHistory(state: ReaderState): ReaderState {
+  return {
+    ...state,
+    history: [],
+  };
+}
+
 // 切换当前章节书签：已存在则删除，不存在则新增。
 // 使用示例：
 // const result = toggleBookmark(state, entry);
@@ -238,6 +248,16 @@ export function removeBookmarkEntry(
   };
 }
 
+// 清空全部书签，保留当前阅读进度、足迹与阅读设置。
+// 使用示例：
+// state = clearAllBookmarks(state);
+export function clearAllBookmarks(state: ReaderState): ReaderState {
+  return {
+    ...state,
+    bookmarks: [],
+  };
+}
+
 // 清空某本书的全部阅读记录：进度、足迹和书签一起移除。
 // 使用示例：
 // state = clearBookReadingState(state, 'hongloumeng');
@@ -250,6 +270,18 @@ export function clearBookReadingState(state: ReaderState, bookSlug: string): Rea
     progress,
     history: state.history.filter((item) => item.bookSlug !== bookSlug),
     bookmarks: state.bookmarks.filter((item) => item.bookSlug !== bookSlug),
+  };
+}
+
+// 清空全部阅读记录，保留当前阅读设置，方便读者整体重开。
+// 使用示例：
+// state = clearAllReadingRecords(state);
+export function clearAllReadingRecords(state: ReaderState): ReaderState {
+  return {
+    ...state,
+    progress: {},
+    history: [],
+    bookmarks: [],
   };
 }
 

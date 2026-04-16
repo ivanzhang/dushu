@@ -155,8 +155,36 @@ const { bookMetaList } = Astro.props;
         <p class="reading-backup-note">
           导入时会把备份和当前浏览器里的记录合并，较新的进度会优先保留，不必担心把刚读到的位置冲掉。
         </p>
-        <p class="reading-backup-status" data-reader-backup-status>
+        <p class="reading-backup-status" data-reader-status>
           建议在换设备前先导出一次，文件会保存为 JSON，可随时留档。
+        </p>
+      </div>
+    </section>
+
+    <section class="panel reading-panel reading-panel-bulk-manage">
+      <div class="panel-head reading-panel-head">
+        <div>
+          <strong class="reading-panel-title">批量整理阅读记录</strong>
+          <p class="reading-panel-sub">当你想整体归档当前浏览器里的阅读痕迹时，可以一键清空足迹、书签，或整套阅读记录。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="reading-bulk-actions">
+          <button type="button" class="btn btn-secondary" data-reader-clear-history>
+            清空全部足迹
+          </button>
+          <button type="button" class="btn btn-secondary" data-reader-clear-bookmarks>
+            清空全部书签
+          </button>
+          <button type="button" class="btn btn-secondary" data-reader-clear-records>
+            清空全部阅读记录
+          </button>
+        </div>
+        <p class="reading-bulk-note">
+          清空全部阅读记录时会保留当前阅读设置，方便你重整书架后继续沿用熟悉的字号、行距和主题。
+        </p>
+        <p class="reading-backup-status" data-reader-status>
+          如果只是想整理某一本到某一章，也可以继续使用上面的逐条移除和单本清空。
         </p>
       </div>
     </section>
@@ -166,6 +194,9 @@ const { bookMetaList } = Astro.props;
 <script>
   import { buildEpubDownloadPath } from '../lib/epub';
   import {
+    clearAllBookmarks,
+    clearAllHistory,
+    clearAllReadingRecords,
     clearBookReadingState,
     removeBookmarkEntry,
     removeHistoryEntry,
@@ -203,8 +234,11 @@ const { bookMetaList } = Astro.props;
     const exportButton = root.querySelector<HTMLButtonElement>('[data-reader-export]');
     const importTrigger = root.querySelector<HTMLButtonElement>('[data-reader-import-trigger]');
     const importInput = root.querySelector<HTMLInputElement>('[data-reader-import-input]');
-    const backupStatus = root.querySelector<HTMLElement>('[data-reader-backup-status]');
+    const statusNodes = root.querySelectorAll<HTMLElement>('[data-reader-status]');
     const resetSettingsButton = root.querySelector<HTMLButtonElement>('[data-reader-settings-reset]');
+    const clearHistoryButton = root.querySelector<HTMLButtonElement>('[data-reader-clear-history]');
+    const clearBookmarksButton = root.querySelector<HTMLButtonElement>('[data-reader-clear-bookmarks]');
+    const clearRecordsButton = root.querySelector<HTMLButtonElement>('[data-reader-clear-records]');
 
     const bookMetaList = JSON.parse(bookMetaNode?.textContent ?? '[]') as ReadingBookMeta[];
     const bookMetaMap = new Map(bookMetaList.map((item) => [item.slug, item]));
@@ -230,12 +264,14 @@ const { bookMetaList } = Astro.props;
     }
 
     function setBackupStatus(message: string, tone: 'neutral' | 'success' | 'error' = 'neutral') {
-      if (!backupStatus) {
+      if (statusNodes.length === 0) {
         return;
       }
 
-      backupStatus.dataset.tone = tone;
-      backupStatus.textContent = message;
+      statusNodes.forEach((node) => {
+        node.dataset.tone = tone;
+        node.textContent = message;
+      });
     }
 
     function getBookMeta(bookSlug: string, fallbackTitle: string) {
@@ -268,6 +304,29 @@ const { bookMetaList } = Astro.props;
       localStorage.setItem(READER_STORAGE_KEY, serializeReaderState(nextState));
       renderDashboard();
       setBackupStatus(message, 'success');
+    }
+
+    // 批量整理动作统一走同一套确认、落盘和反馈，避免三处逻辑各自漂移。
+    function runBulkCleanup(options: {
+      confirmText: string;
+      emptyMessage: string;
+      successMessage: string;
+      hasData: (state: ReturnType<typeof parseReaderState>) => boolean;
+      transform: (state: ReturnType<typeof parseReaderState>) => ReturnType<typeof parseReaderState>;
+    }) {
+      const currentState = parseReaderState(localStorage.getItem(READER_STORAGE_KEY));
+
+      if (!options.hasData(currentState)) {
+        setBackupStatus(options.emptyMessage);
+        return;
+      }
+
+      if (!window.confirm(options.confirmText)) {
+        return;
+      }
+
+      const nextState = options.transform(currentState);
+      persistDashboardState(nextState, options.successMessage);
     }
 
     function renderActiveBooks(items: ReturnType<typeof getReadingDashboardSnapshot>['activeBooks']) {
@@ -546,6 +605,37 @@ const { bookMetaList } = Astro.props;
       const nextState = resetReaderSettings(currentState);
       persistDashboardState(nextState, '已把阅读设置恢复为默认值。');
     });
+    clearHistoryButton?.addEventListener('click', () => {
+      runBulkCleanup({
+        confirmText: '确定清空全部最近足迹吗？',
+        emptyMessage: '当前还没有可清空的足迹记录。',
+        successMessage: '已清空全部足迹。',
+        hasData: (state) => state.history.length > 0,
+        transform: (state) => clearAllHistory(state),
+      });
+    });
+    clearBookmarksButton?.addEventListener('click', () => {
+      runBulkCleanup({
+        confirmText: '确定清空全部书签吗？',
+        emptyMessage: '当前还没有可清空的书签。',
+        successMessage: '已清空全部书签。',
+        hasData: (state) => state.bookmarks.length > 0,
+        transform: (state) => clearAllBookmarks(state),
+      });
+    });
+    clearRecordsButton?.addEventListener('click', () => {
+      runBulkCleanup({
+        confirmText: '确定清空全部阅读记录吗？这会移除继续阅读、最近足迹和书签，但会保留当前阅读设置。',
+        emptyMessage: '当前还没有可清空的阅读记录。',
+        successMessage: '已清空全部阅读记录，并保留当前阅读设置。',
+        hasData: (state) => {
+          return Object.keys(state.progress).length > 0
+            || state.history.length > 0
+            || state.bookmarks.length > 0;
+        },
+        transform: (state) => clearAllReadingRecords(state),
+      });
+    });
 
     window.addEventListener('storage', (event) => {
       if (event.key === READER_STORAGE_KEY) {
@@ -726,13 +816,24 @@ const { bookMetaList } = Astro.props;
     grid-column: 1 / -1;
   }
 
+  .reading-panel-bulk-manage {
+    grid-column: 1 / -1;
+  }
+
   .reading-backup-actions {
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
   }
 
+  .reading-bulk-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .reading-backup-note,
+  .reading-bulk-note,
   .reading-backup-status {
     margin: 0.9rem 0 0;
     color: var(--ink-500);

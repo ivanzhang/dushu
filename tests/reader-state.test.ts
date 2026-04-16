@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import * as readerState from '../src/lib/reader-state';
 import {
+  clearAllBookmarks,
+  clearAllHistory,
+  clearAllReadingRecords,
   clearBookReadingState,
   MAX_READER_HISTORY,
   createDefaultReaderState,
@@ -629,5 +632,136 @@ describe('reader state helpers', () => {
     const reset = resetReaderSettings(state);
 
     expect(reset.settings).toEqual(createDefaultReaderState().settings);
+  });
+
+  it('可以一键清空全部阅读足迹，但保留进度与书签', () => {
+    let state = createDefaultReaderState();
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      updatedAt: 1713000005000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      visitedAt: 1713000005000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      createdAt: 1713000005000,
+    }).state;
+
+    const next = clearAllHistory(state);
+
+    expect(next.history).toEqual([]);
+    expect(next.progress.hongloumeng?.chapterSlug).toBe('012');
+    expect(next.bookmarks).toHaveLength(1);
+  });
+
+  it('可以一键清空全部书签，但保留进度与足迹', () => {
+    let state = createDefaultReaderState();
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      updatedAt: 1713000005000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      visitedAt: 1713000005000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      createdAt: 1713000005000,
+    }).state;
+
+    const next = clearAllBookmarks(state);
+
+    expect(next.bookmarks).toEqual([]);
+    expect(next.progress.hongloumeng?.chapterSlug).toBe('012');
+    expect(next.history).toHaveLength(1);
+  });
+
+  it('可以一键清空全部阅读记录，但保留当前阅读设置', () => {
+    let state = patchReaderSettings(createDefaultReaderState(), {
+      fontSize: 24,
+      lineHeight: 2.1,
+      contentWidth: 820,
+      theme: 'dark',
+    });
+
+    state = updateReadingProgress(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      updatedAt: 1713000005000,
+    });
+
+    state = recordReadingHistory(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      visitedAt: 1713000005000,
+    });
+
+    state = toggleBookmark(state, {
+      bookSlug: 'hongloumeng',
+      bookTitle: '红楼梦',
+      chapterSlug: '012',
+      chapterTitle: '王熙凤毒设相思局',
+      chapterNumber: 12,
+      progress: 0.66,
+      createdAt: 1713000005000,
+    }).state;
+
+    const next = clearAllReadingRecords(state);
+
+    expect(next.progress).toEqual({});
+    expect(next.history).toEqual([]);
+    expect(next.bookmarks).toEqual([]);
+    expect(next.settings).toMatchObject({
+      fontSize: 24,
+      lineHeight: 2.1,
+      contentWidth: 820,
+      theme: 'dark',
+    });
   });
 });
